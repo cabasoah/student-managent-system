@@ -10,11 +10,11 @@ class Question extends Model
 {
     use HasFactory;
     
-    protected $fillable = ['quiz_id', 'teacher_id', 'class_id', 'section_id', 'semester_id', 'session_id', 'question_text', 'type'];
+    protected $fillable = ['quiz_id', 'teacher_id', 'class_id', 'section_id', 'semester_id', 'session_id', 'question_text', 'type', 'correct_answer', 'max_mark'];
 
     // A question belongs to a quiz
     public function quiz() {
-        return $this->belongsTo(Quiz::class);
+        return $this->belongsTo(Quiz::class,'quiz_id');
     }
 
     // A question belongs to a teacher
@@ -44,7 +44,7 @@ class Question extends Model
 
     // A question has many options
     public function options() {
-        return $this->hasMany(Option::class);
+        return $this->hasMany(Option::class,'question_id');
     }
 
     // A question has many student answers

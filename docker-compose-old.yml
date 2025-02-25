@@ -1,5 +1,6 @@
+version: '3'
 services:
-  
+
   #PHP Service
   app:
     build:
@@ -14,14 +15,30 @@ services:
       SERVICE_TAGS: dev
     working_dir: /var/www
     volumes:
-      - .:/var/www
+      - ./:/var/www
+      - ./php/local.ini:/usr/local/etc/php/conf.d/local.ini
     networks:
       - app-network
-   
+
+  #Nginx Service
+  webserver:
+    image: nginx:alpine
+    container_name: webserver
+    restart: unless-stopped
+    tty: true
+    ports:
+      - "8080:80"
+      - "443:443"
+    volumes:
+      - ./:/var/www
+      - ./nginx/conf.d/:/etc/nginx/conf.d/
+    networks:
+      - app-network
+
   #MySQL Service
   db:
-    image: mysql:5.7
-    container_name: mysql_db
+    image: mysql:5.7.22
+    container_name: cugdb
     restart: unless-stopped
     tty: true
     ports:
@@ -29,23 +46,12 @@ services:
     environment:
       MYSQL_DATABASE: unifiedtransform
       MYSQL_ROOT_PASSWORD: cug123
+      SERVICE_TAGS: dev
+      SERVICE_NAME: mysql
     volumes:
-      - dbdata:/var/lib/mysql
+      - dbdata:/var/lib/mysql/
       - ./mysql/my.cnf:/etc/mysql/my.cnf
-    networks:
-      - app-network
-
-  #Nginx Service
-  webserver:
-    image: nginx:alpine
-    container_name: nginx
-    restart: unless-stopped
-    ports:
-      - "8080:80"
-      - "443:443"
-    volumes:
-      - .:/var/www
-      - ./nginx/conf.d/:/etc/nginx/conf.d/
+    # command: mysqld --skip-grant-tables
     networks:
       - app-network
 

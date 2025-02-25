@@ -19,8 +19,8 @@
 
                     <!-- Timer -->
                     <div class="alert alert-warning d-flex justify-content-between">
-                        <strong>Time Left: <span id="timer">00:00</span></strong>
-                        <button class="btn btn-danger" onclick="submitQuiz()">Submit Quiz</button>
+                        <div id="timer" style="font-size: 20px; font-weight: bold; color: red;">Time Left: <span id="time-remaining" class="text-danger"></span></div>
+                        <button id="submit-btn" class="btn btn-danger" onclick="submitQuiz()">Submit Quiz</button>
                     </div>
 
                     <!-- Quiz Questions -->
@@ -28,10 +28,10 @@
                         @csrf
                         <input type="hidden" name="quiz_id" value="{{ $quiz->id }}">
                         <input type="hidden" id="attempt_id" name="attempt_id" value="{{ $attempt->id }}">
-                        <input type="hidden" id="class_id" name="class_id" value="{{ $attempt->class_id }}">
-                        <input type="hidden" id="section_id" name="section_id" value="{{ $attempt->section_id }}">
-                        <input type="hidden" id="semester_id" name="semester_id" value="{{ $attempt->semester_id }}">
-                        <input type="hidden" id="session_id" name="session_id" value="{{ $attempt->session_id }}">
+                        <input type="hidden" id="class_id" name="class_id" value="{{ $quiz->class_id }}">
+                        <input type="hidden" id="section_id" name="section_id" value="{{ $quiz->section_id }}">
+                        <input type="hidden" id="semester_id" name="semester_id" value="{{ $quiz->semester_id }}">
+                        <input type="hidden" id="session_id" name="session_id" value="{{ $quiz->session_id }}">
 
                         @foreach($quiz->questions as $index => $question)
                         <div class="question-container" data-question="{{ $index }}" style="display: {{ $index === 0 ? 'block' : 'none' }};">
@@ -52,7 +52,7 @@
                                     </div>
                                 @endforeach
                             @else
-                                <textarea name="answers[{{ $question->id }}]" rows="3" class="form-control" oninput="saveAnswer({{ $question->id }}, this.value)"></textarea>
+                                <textarea name="answers[{{ $question->id }}]" rows="3" class="form-control" onchange="saveAnswer({{ $question->id }}, this.value)"></textarea>
                             @endif
                         </div>
                         @endforeach
@@ -69,133 +69,187 @@
         </div>
     </div>
 </div>
-
-@endsection
-
-@section('scripts')
 <script>
-    let timeLeft = 10 * 60; // Set quiz duration in seconds (e.g., 10 minutes)
+    let totalTime = {{$quiz->duration * 60}}; // Duration in seconds
+    let timeLeft = localStorage.getItem('quiz_time_left') ? parseInt(localStorage.getItem('quiz_time_left')) : totalTime;
     let interval;
+
     let currentQuestion = 0;
-    const questions = document.querySelectorAll('.question-container');
+    let questions;
+
+    let quizSubmitted = false; // Track if the quiz is already submitted
+    let timerInterval;
+
+    document.addEventListener("DOMContentLoaded", function () {
+        questions = document.querySelectorAll('.question-container'); // Now it loads after the DOM is ready
+        questions[currentQuestion].style.display = 'block'; // Ensure the first question is visible
+    });
+
+    function updateTimerDisplay() {
+        const minutes = Math.floor(timeLeft / 60);
+        const seconds = timeLeft % 60;
+        document.getElementById("time-remaining").innerText = `${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
+    }
 
     function startTimer() {
-        interval = setInterval(() => {
-            if (timeLeft <= 0) {
-                clearInterval(interval);
-                alert('Time is up! Submitting quiz...');
-                submitQuiz();
-                return;
-            }
-            document.getElementById('timer').textContent = new Date(timeLeft * 1000).toISOString().substr(14, 5);
+        updateTimerDisplay();
+
+        timerInterval = setInterval(() => {
             timeLeft--;
+            localStorage.setItem('quiz_time_left', timeLeft); // Save the remaining time
+
+            if (timeLeft <= 30) {
+                document.getElementById("timer").style.color = "orange"; 
+            }
+
+            updateTimerDisplay();
+
+            if (timeLeft <= 0) {
+                clearInterval(timerInterval);
+                localStorage.removeItem('quiz_time_left'); // Clear storage after submission
+                alert("Time is up! Submitting the quiz...");
+                submitQuiz(); 
+            }
         }, 1000);
     }
-
-    function saveAnswer(questionId, answerValue, optionId = null) {
-        const attemptId = document.getElementById('attempt_id').value; // Hidden input field storing attempt ID
-        const classId = document.getElementById('class_id').value; // Hidden input for class
-        const sectionId = document.getElementById('section_id').value; // Hidden input for section
-        const semesterId = document.getElementById('semester_id').value; // Hidden input for semester
-        const sessionId = document.getElementById('session_id').value; // Hidden input for session
-
-        fetch('{{ route('quiz.save.answer') }}', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRF-TOKEN': '{{ csrf_token() }}'
-            },
-            body: JSON.stringify({
-                attempt_id: attemptId,
-                question_id: questionId,
-                answer: answerValue,
-                option_id: optionId,
-                class_id: classId,
-                section_id: sectionId,
-                semester_id: semesterId,
-                session_id: sessionId
-            })
-        }).catch(err => console.error('Error saving answer:', err));
-    }
-
-
-    function prevQuestion() {
-        if (currentQuestion > 0) {
-            questions[currentQuestion].style.display = 'none';
-            currentQuestion--;
-            questions[currentQuestion].style.display = 'block';
-            document.getElementById('next-btn').disabled = false;
+    
+    // Start the timer when the page loads
+    window.onload = () => {
+        if (!localStorage.getItem('quiz_time_left')) {
+            localStorage.setItem('quiz_time_left', totalTime); // Initialize time if not set
         }
-        if (currentQuestion === 0) {
-            document.getElementById('prev-btn').disabled = true;
-        }
-    }
+        startTimer();
+    };
+
 
     function nextQuestion() {
         if (currentQuestion < questions.length - 1) {
             questions[currentQuestion].style.display = 'none';
             currentQuestion++;
             questions[currentQuestion].style.display = 'block';
-            document.getElementById('prev-btn').disabled = false;
         }
-        if (currentQuestion === questions.length - 1) {
-            document.getElementById('next-btn').disabled = true;
-        }
+
+        // Enable "Previous" button when moving forward
+        document.getElementById('prev-btn').disabled = currentQuestion === 0;
+        
+        // Disable "Next" button when at the last question
+        document.getElementById('next-btn').disabled = currentQuestion === questions.length - 1;
     }
 
+    function prevQuestion() {
+        if (currentQuestion > 0) {
+            questions[currentQuestion].style.display = 'none';
+            currentQuestion--;
+            questions[currentQuestion].style.display = 'block';
+        }
+
+        // Disable "Previous" button when at the first question
+        document.getElementById('prev-btn').disabled = currentQuestion === 0;
+
+        // Enable "Next" button when moving backward
+        document.getElementById('next-btn').disabled = false;
+    }
+
+    function saveAnswer(questionId, answerValue) {
+    const attemptId = document.getElementById('attempt_id').value;
+    const classId = document.getElementById('class_id').value;
+    const sectionId = document.getElementById('section_id').value;
+    const semesterId = document.getElementById('semester_id').value;
+    const sessionId = document.getElementById('session_id').value;
+    
+    fetch('/student-quizzes/save-answer', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+        },
+        body: JSON.stringify({
+            attempt_id: attemptId,
+            question_id: questionId,
+            answer: answerValue,
+            class_id: classId,
+            section_id: sectionId,
+            semester_id: semesterId,
+            session_id: sessionId
+        })
+    })
+    .then(response => response.json().then(data => ({ status: response.status, body: data })))
+    .then(({ status, body }) => {
+        if (status === 200) {
+            console.log('Answer saved successfully:', body.message);
+        } else {
+            console.error(`Failed to save answer (Status ${status}):`, body);
+        }
+    })
+    .catch(err => console.error('Error saving answer:', err));
+}
+
+
     function submitQuiz() {
-        if (!confirm("Are you sure you want to submit your answers?")) {
-            return; // Exit function if user cancels submission
+        if (quizSubmitted) return;
+        quizSubmitted = true;
+
+        if (!confirm("Are you sure you want to submit the quiz?")) {
+            quizSubmitted = false;
+            return;
         }
 
         const submitBtn = document.getElementById('submit-btn');
-        submitBtn.disabled = true; // Disable the button to prevent multiple submissions
-        submitBtn.innerText = 'Submitting...'; 
+        submitBtn.disabled = true;
+        submitBtn.innerText = 'Submitting...';
 
-        const attemptId = document.getElementById('attempt_id').value;
-        const classId = document.getElementById('class_id').value;
-        const sectionId = document.getElementById('section_id').value;
-        const semesterId = document.getElementById('semester_id').value;
-        const sessionId = document.getElementById('session_id').value;
+        const attemptInput = document.getElementById('attempt_id');
+
+        if (!attemptInput || !attemptInput.value) {
+            alert("Attempt ID is missing. Please refresh and try again.");
+            quizSubmitted = false;
+            submitBtn.disabled = false;
+            submitBtn.innerText = 'Submit Quiz';
+            return;
+        }
+
+        const getFieldValue = (id) => document.getElementById(id) ? document.getElementById(id).value : null;
+
+        const requestBody = {
+            attempt_id: attemptInput.value,
+            class_id: getFieldValue('class_id'),
+            section_id: getFieldValue('section_id'),
+            semester_id: getFieldValue('semester_id'),
+            session_id: getFieldValue('session_id')
+        };
 
         fetch('{{ route('quiz.submit') }}', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
             },
-            body: JSON.stringify({
-                attempt_id: attemptId,
-                class_id: classId,
-                section_id: sectionId,
-                semester_id: semesterId,
-                session_id: sessionId
-            })
+            body: JSON.stringify(requestBody)
         })
         .then(response => response.json())
         .then(data => {
-            if (data.message === 'Quiz submitted successfully') {
-                alert('Quiz submitted successfully! Your score: ' + data.score);
-                window.location.href = "{{ route('quiz.results', ['attempt_id' => '']) }}" + document.getElementById('attempt_id').value;
+            if (data.message) {
+                alert('Quiz submitted successfully! Your score: ' + (data.score ?? 'Unknown'));
+                localStorage.removeItem('quiz_time_left');
+                window.location.href = "{{ route('quiz.results', ['attempt_id' => 'PLACEHOLDER']) }}".replace('PLACEHOLDER', attemptInput.value);
             } else {
-                alert('Error submitting quiz. Please try again.');
-                submitBtn.disabled = false; // Re-enable button if submission fails
-                submitBtn.innerText = 'Submit Quiz';
+                throw new Error('Unexpected response format');
             }
         })
         .catch(err => {
             console.error('Error submitting quiz:', err);
-            alert('Something went wrong. Please try again.');
-            submitBtn.disabled = false; // Re-enable button
+            alert('Submission failed: ' + err.message);
+            submitBtn.disabled = false;
             submitBtn.innerText = 'Submit Quiz';
+            quizSubmitted = false;
         });
     }
-
 
     // Prevent Copy-Paste
     document.addEventListener('copy', (e) => e.preventDefault());
     document.addEventListener('paste', (e) => e.preventDefault());
 
-    startTimer();
 </script>
 @endsection
+
+

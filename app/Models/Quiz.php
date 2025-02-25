@@ -9,7 +9,7 @@ class Quiz extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['title', 'description', 'course_id', 'teacher_id', 'class_id', 'section_id', 'semester_id', 'session_id'];
+    protected $fillable = ['title', 'description', 'course_id', 'teacher_id', 'class_id', 'section_id', 'semester_id', 'session_id','duration', 'is_visible_to_student'];
 
     // A quiz belongs to a course
     public function course() {

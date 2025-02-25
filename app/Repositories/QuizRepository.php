@@ -11,6 +11,7 @@ class QuizRepository {
     {
         return Quiz::where('course_id', $course_id)
                    ->where('session_id', $session_id)
+                   ->where('is_visible_to_student', true)
                    ->get();
     }
 }

@@ -13,6 +13,6 @@ class Option extends Model
 
     // An option belongs to a question
     public function question() {
-        return $this->belongsTo(Question::class);
+        return $this->belongsTo(Question::class, 'question_id');
     }
 }

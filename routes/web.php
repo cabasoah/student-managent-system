@@ -142,23 +142,25 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/exams/grade/view-rules', [GradeRuleController::class, 'index'])->name('exam.grade.system.rule.show');
     Route::post('/exams/grade/delete-rule', [GradeRuleController::class, 'destroy'])->name('exam.grade.system.rule.delete');
 
-    // Quizes
-    Route::prefix('quizzes')->name('quizes.')->group(function () {
-        Route::get('/', [QuizController::class, 'index'])->name('index');
-        Route::post('/', [QuizController::class, 'store'])->name('store');
-        Route::get('/{id}', [QuizController::class, 'show'])->name('show');
-    
-        Route::post('/questions', [QuestionController::class, 'store'])->name('question.store');
-        Route::get('/{quiz_id}/questions', [QuestionController::class, 'getQuestions'])->name('question.index');
+    // Quizes - Teacher/Admin
+    Route::prefix('admin')->name('admin.')->group(function () {
+        Route::resource('quizzes', QuizController::class);
+        Route::post('/quizzes/{quiz}/toggle-visibility', [QuizController::class, 'toggleVisibility'])->name('quizzes.toggleVisibility');
+
+        Route::resource('quizzes.questions', QuestionController::class)->except(['index']);
+        Route::get('/{quiz}/questions', [QuestionController::class, 'index'])->name('quizzes.questions');
+        Route::get('questions/{quiz}/bulk-upload', [QuestionController::class, 'showBulkUploadForm'])->name('questions.bulk-upload-form');
+        Route::post('quizzes/{quiz}/questions/bulk-upload', [QuestionController::class, 'bulkUpload'])->name('questions.bulk-upload');
     });
 
+    // Quizes - Student
     Route::prefix('student-quizzes')->group(function () {
         Route::get('/', [StudentQuizController::class, 'index'])->name('student.quizes.index');
-        Route::post('/attempt', [StudentQuizController::class, 'attemptQuiz'])->name('quiz.attempt');
-        Route::get('/attempts/{student_id}', [StudentQuizController::class, 'getStudentAttempts'])->name('student.quiz.attempts');
+        Route::get('/attempt/{quiz_id}', [StudentQuizController::class, 'attemptQuiz'])->name('quiz.attempt');
     });
     Route::post('/student-quizzes/save-answer', [StudentQuizController::class, 'saveAnswer'])->name('quiz.save.answer');
     Route::post('/student-quizzes/submit', [StudentQuizController::class, 'submitQuiz'])->name('quiz.submit');
+    Route::get('/student-quiz/results/{attempt_id}', [StudentQuizController::class, 'quizResults'])->name('quiz.results');
 
     // Promotions
     Route::get('/promotions/index', [PromotionController::class, 'index'])->name('promotions.index');
@@ -198,5 +200,5 @@ Route::middleware(['auth'])->group(function () {
 
     // Update password
     Route::get('password/edit', [UpdatePasswordController::class, 'edit'])->name('password.edit');
-    Route::post('password/update', [UpdatePasswordController::class, 'update'])->name('password.update');
+    Route::post('password/update', [UpdatePasswordController::class, 'update'])->name('password.custom.update');
 });

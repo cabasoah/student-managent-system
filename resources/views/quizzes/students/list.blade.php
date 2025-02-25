@@ -34,7 +34,7 @@
                                     <td>{{ $quiz->description }}</td>
                                     <td>{{ $quiz->duration }} mins</td>
                                     <td>
-                                        <a href="{{ route('quiz.attempt', ['id' => $quiz->id]) }}" class="btn btn-sm btn-primary">
+                                        <a href="{{ route('quiz.attempt', ['quiz_id' => $quiz->id]) }}" class="btn btn-sm btn-primary">
                                             <i class="bi bi-play-circle"></i> Start Quiz
                                         </a>
                                     </td>

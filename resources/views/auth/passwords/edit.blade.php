@@ -16,7 +16,7 @@
                     </nav>
                     @include('session-messages')
                     <div class="col-6 border p-3 shadow-sm">
-                        <form action="{{route('password.update')}}" method="POST">
+                        <form action="{{route('password.custom.update')}}" method="POST">
                             @csrf
                             <div class="mb-3">
                                 <label for="old-password" class="form-label">Old Password</label>

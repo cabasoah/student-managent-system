@@ -95,6 +95,7 @@
                         </a>
                         <ul class="nav collapse {{ request()->is('exams*')? 'show' : 'hide' }} bg-white" id="exam-grade-submenu">
                             <li class="nav-item w-100" {{ request()->routeIs('exam.list.show')? 'style="font-weight:bold;"' : '' }}><a class="nav-link" href="{{route('exam.list.show')}}"><i class="bi bi-file-text me-2"></i> View Exams</a></li>
+                            <li class="nav-item w-100" {{ request()->routeIs('admin.quizzes.index')? 'style="font-weight:bold;"' : '' }}><a class="nav-link" href="{{route('admin.quizzes.index')}}"><i class="bi bi-file-text me-2"></i> View Quizzes</a></li>
                             @if (Auth::user()->role == "admin" || Auth::user()->role == "teacher")
                             <li class="nav-item w-100" {{ request()->routeIs('exam.create.show')? 'style="font-weight:bold;"' : '' }}><a class="nav-link" href="{{route('exam.create.show')}}"><i class="bi bi-file-plus me-2"></i> Create Exams</a></li>
                             @endif
@@ -138,16 +139,16 @@
                         <a class="nav-link {{ request()->is('promotions*')? 'active' : '' }}" href="{{url('promotions/index')}}"><i class="bi bi-sort-numeric-up-alt"></i> <span class="ms-1 d-inline d-sm-none d-md-none d-xl-inline">Promotion</span></a>
                     </li>
                     @endif
-                    <li class="nav-item">
+                    {{-- <li class="nav-item">
                         <a class="nav-link disabled" href="#" aria-disabled="true"><i class="bi bi-currency-exchange"></i> <span class="ms-1 d-inline d-sm-none d-md-none d-xl-inline">Payment</span></a>
-                    </li>
+                    </li> --}}
                     @if (Auth::user()->role == "admin")
                     <li class="nav-item">
                         <a class="nav-link disabled" href="#" aria-disabled="true"><i class="bi bi-person-lines-fill"></i> <span class="ms-1 d-inline d-sm-none d-md-none d-xl-inline">Staff</span></a>
                     </li>
-                    <li class="nav-item">
+                    {{-- <li class="nav-item">
                         <a class="nav-link disabled" href="#" aria-disabled="true"><i class="bi bi-journals"></i> <span class="ms-1 d-inline d-sm-none d-md-none d-xl-inline">Library</span></a>
-                    </li>
+                    </li> --}}
                     @endif
                 </ul>
             </div>

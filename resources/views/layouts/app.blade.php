@@ -27,8 +27,63 @@
    
     <link href="{{ asset('css/bootstrap.min.css') }}" rel="stylesheet">
     <link href="{{ asset('css/app.css') }}" rel="stylesheet">
+    <style>
+        /* Preloader Styles */
+        #preloader {
+            position: fixed;
+            width: 100%;
+            height: 100%;
+            background: #ffffff;
+            z-index: 9999;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            transition: opacity 0.5s ease-out;
+        }
+
+        .spinner {
+            width: 50px;
+            height: 50px;
+            border: 4px solid #007bff;
+            border-top: 4px solid transparent;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        .modal-content {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            width: 50%;
+        }
+        .close {
+            float: right;
+            font-size: 24px;
+            cursor: pointer;
+        }
+    </style>
 </head>
 <body>
+    <!-- Preloader -->
+    <div id="preloader">
+        <div class="spinner"></div>
+    </div>
     <div id="app">
         <nav class="navbar sticky-top navbar-expand-md navbar-light bg-white border-btm-e6">
             <div class="container">
@@ -105,5 +160,17 @@
     <div id="watermark">
         {{-- <p>{{ config('app.name', 'CugManagementSystem') }}</p> --}}
     </div>
+
+ <!-- Preloader Script -->
+ <script>
+    window.addEventListener("load", function() {
+        setTimeout(function() {
+            document.getElementById("preloader").style.opacity = "0";
+            setTimeout(function() {
+                document.getElementById("preloader").style.display = "none";
+            }, 500);
+        }, 300);
+    });
+</script>
 </body>
 </html>
