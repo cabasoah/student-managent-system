@@ -29,6 +29,10 @@ use App\Http\Controllers\Auth\UpdatePasswordController;
 use App\Http\Controllers\QuizController;
 use App\Http\Controllers\QuestionController;
 use App\Http\Controllers\StudentQuizController;
+use App\Exports\QuizzesExport;
+use Maatwebsite\Excel\Facades\Excel;
+use App\Interfaces\SchoolSessionInterface;
+use App\Exports\StudentResultsExport;
 
 /*
 |--------------------------------------------------------------------------
@@ -152,6 +156,10 @@ Route::middleware(['auth'])->group(function () {
         Route::get('questions/{quiz}/bulk-upload', [QuestionController::class, 'showBulkUploadForm'])->name('questions.bulk-upload-form');
         Route::post('quizzes/{quiz}/questions/bulk-upload', [QuestionController::class, 'bulkUpload'])->name('questions.bulk-upload');
     });
+    Route::get('/admin/quizzes/{quiz}/results', [QuizController::class, 'showResults'])->name('admin.quizzes.results');
+    Route::get('/admin/quiz/{quizId}/export', function ($quizId) {
+        return Excel::download(new StudentResultsExport($quizId), 'students_results.xlsx');
+    })->name('admin.quiz.results.export');
 
     // Quizes - Student
     Route::prefix('student-quizzes')->group(function () {
@@ -161,6 +169,9 @@ Route::middleware(['auth'])->group(function () {
     Route::post('/student-quizzes/save-answer', [StudentQuizController::class, 'saveAnswer'])->name('quiz.save.answer');
     Route::post('/student-quizzes/submit', [StudentQuizController::class, 'submitQuiz'])->name('quiz.submit');
     Route::get('/student-quiz/results/{attempt_id}', [StudentQuizController::class, 'quizResults'])->name('quiz.results');
+    Route::get('/student/quizzes/export', function (SchoolSessionInterface $schoolSessionRepository) {
+        return Excel::download(new QuizzesExport($schoolSessionRepository), 'quizzes.xlsx');
+    })->name('student.quizzes.export');
 
     // Promotions
     Route::get('/promotions/index', [PromotionController::class, 'index'])->name('promotions.index');

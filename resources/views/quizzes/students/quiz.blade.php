@@ -24,39 +24,41 @@
                     </div>
 
                     <!-- Quiz Questions -->
-                    <form id="quiz-form">
-                        @csrf
-                        <input type="hidden" name="quiz_id" value="{{ $quiz->id }}">
-                        <input type="hidden" id="attempt_id" name="attempt_id" value="{{ $attempt->id }}">
-                        <input type="hidden" id="class_id" name="class_id" value="{{ $quiz->class_id }}">
-                        <input type="hidden" id="section_id" name="section_id" value="{{ $quiz->section_id }}">
-                        <input type="hidden" id="semester_id" name="semester_id" value="{{ $quiz->semester_id }}">
-                        <input type="hidden" id="session_id" name="session_id" value="{{ $quiz->session_id }}">
+                    <div class="bg-white mt-4 p-3 border shadow-sm">
+                        <form id="quiz-form">
+                            @csrf
+                            <input type="hidden" name="quiz_id" value="{{ $quiz->id }}">
+                            <input type="hidden" id="attempt_id" name="attempt_id" value="{{ $attempt->id }}">
+                            <input type="hidden" id="class_id" name="class_id" value="{{ $quiz->class_id }}">
+                            <input type="hidden" id="section_id" name="section_id" value="{{ $quiz->section_id }}">
+                            <input type="hidden" id="semester_id" name="semester_id" value="{{ $quiz->semester_id }}">
+                            <input type="hidden" id="session_id" name="session_id" value="{{ $quiz->session_id }}">
 
-                        @foreach($quiz->questions as $index => $question)
-                        <div class="question-container" data-question="{{ $index }}" style="display: {{ $index === 0 ? 'block' : 'none' }};">
-                            <h5>Q{{ $index + 1 }}: {{ $question->question_text }}</h5>
+                            @foreach($quiz->questions as $index => $question)
+                            <div class="question-container" data-question="{{ $index }}" style="display: {{ $index === 0 ? 'block' : 'none' }};">
+                                <h5>Q{{ $index + 1 }}: {{ $question->question_text }}</h5>
 
-                            @if ($question->type === 'single_choice')
-                                @foreach($question->options as $option)
-                                    <div>
-                                        <input type="radio" name="answers[{{ $question->id }}]" value="{{ $option->id }}" onchange="saveAnswer({{ $question->id }}, {{ $option->id }})">
-                                        {{ $option->option_text }}
-                                    </div>
-                                @endforeach
-                            @elseif ($question->type === 'multiple_choice')
-                                @foreach($question->options as $option)
-                                    <div>
-                                        <input type="checkbox" name="answers[{{ $question->id }}][]" value="{{ $option->id }}" onchange="saveAnswer({{ $question->id }}, {{ $option->id }})">
-                                        {{ $option->option_text }}
-                                    </div>
-                                @endforeach
-                            @else
-                                <textarea name="answers[{{ $question->id }}]" rows="3" class="form-control" onchange="saveAnswer({{ $question->id }}, this.value)"></textarea>
-                            @endif
-                        </div>
-                        @endforeach
-                    </form>
+                                @if ($question->type === 'single_choice')
+                                    @foreach($question->options as $option)
+                                        <div>
+                                            <input type="radio" name="answers[{{ $question->id }}]" value="{{ $option->id }}" onchange="saveAnswer({{ $question->id }},{{ $option->id }},'{{ $option->option_text }}')">
+                                            {{ $option->option_text }}
+                                        </div>
+                                    @endforeach
+                                @elseif ($question->type === 'multiple_choice')
+                                    @foreach($question->options as $option)
+                                        <div>
+                                            <input type="checkbox" name="answers[{{ $question->id }}][]" value="{{ $option->id }}" onchange="saveAnswer({{ $question->id }},{{ $option->id }},'{{ addslashes($option->option_text) }}')">
+                                            {{ $option->option_text }}
+                                        </div>
+                                    @endforeach
+                                @else
+                                    <textarea name="answers[{{ $question->id }}]" rows="3" class="form-control" onchange="saveAnswer({{ $question->id }}, null, this.value)"></textarea>
+                                @endif
+                            </div>
+                            @endforeach
+                        </form>
+                    </div>
 
                     <!-- Navigation Buttons -->
                     <div class="d-flex justify-content-between mt-3">
@@ -71,53 +73,45 @@
 </div>
 <script>
     let totalTime = {{$quiz->duration * 60}}; // Duration in seconds
-    let timeLeft = localStorage.getItem('quiz_time_left') ? parseInt(localStorage.getItem('quiz_time_left')) : totalTime;
+    let startTime = new Date("{{$attempt->started_at}}").getTime();
+    let endTime = startTime + quizDuration * 1000;
+    // let timeLeft = localStorage.getItem('quiz_time_left') ? parseInt(localStorage.getItem('quiz_time_left')) : totalTime;
     let interval;
 
     let currentQuestion = 0;
     let questions;
 
     let quizSubmitted = false; // Track if the quiz is already submitted
-    let timerInterval;
+    // let timerInterval;
 
     document.addEventListener("DOMContentLoaded", function () {
         questions = document.querySelectorAll('.question-container'); // Now it loads after the DOM is ready
         questions[currentQuestion].style.display = 'block'; // Ensure the first question is visible
     });
 
-    function updateTimerDisplay() {
+    function updateTimerDisplay(timeLeft) {
         const minutes = Math.floor(timeLeft / 60);
         const seconds = timeLeft % 60;
         document.getElementById("time-remaining").innerText = `${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
     }
 
     function startTimer() {
-        updateTimerDisplay();
+        let timerInterval = setInterval(() => {
+            let now = new Date().getTime();
+            let timeLeft = Math.max(0, Math.floor((endTime - now) / 1000));
 
-        timerInterval = setInterval(() => {
-            timeLeft--;
-            localStorage.setItem('quiz_time_left', timeLeft); // Save the remaining time
-
-            if (timeLeft <= 30) {
-                document.getElementById("timer").style.color = "orange"; 
-            }
-
-            updateTimerDisplay();
+            updateTimerDisplay(timeLeft);
 
             if (timeLeft <= 0) {
                 clearInterval(timerInterval);
-                localStorage.removeItem('quiz_time_left'); // Clear storage after submission
                 alert("Time is up! Submitting the quiz...");
-                submitQuiz(); 
+                submitQuiz();
             }
         }, 1000);
     }
     
     // Start the timer when the page loads
     window.onload = () => {
-        if (!localStorage.getItem('quiz_time_left')) {
-            localStorage.setItem('quiz_time_left', totalTime); // Initialize time if not set
-        }
         startTimer();
     };
 
@@ -150,7 +144,7 @@
         document.getElementById('next-btn').disabled = false;
     }
 
-    function saveAnswer(questionId, answerValue) {
+    function saveAnswer(questionId, optionId, answerValue) {
     const attemptId = document.getElementById('attempt_id').value;
     const classId = document.getElementById('class_id').value;
     const sectionId = document.getElementById('section_id').value;
@@ -167,6 +161,7 @@
             attempt_id: attemptId,
             question_id: questionId,
             answer: answerValue,
+            option_id: optionId, 
             class_id: classId,
             section_id: sectionId,
             semester_id: semesterId,
@@ -194,6 +189,7 @@
             return;
         }
 
+        clearInterval(timerInterval);
         const submitBtn = document.getElementById('submit-btn');
         submitBtn.disabled = true;
         submitBtn.innerText = 'Submitting...';
@@ -230,7 +226,6 @@
         .then(data => {
             if (data.message) {
                 alert('Quiz submitted successfully! Your score: ' + (data.score ?? 'Unknown'));
-                localStorage.removeItem('quiz_time_left');
                 window.location.href = "{{ route('quiz.results', ['attempt_id' => 'PLACEHOLDER']) }}".replace('PLACEHOLDER', attemptInput.value);
             } else {
                 throw new Error('Unexpected response format');

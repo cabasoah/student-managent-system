@@ -9,6 +9,7 @@ use App\Models\Section;
 use App\Models\StudentAnswer;
 use App\Models\StudentQuizAttempt;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 
 class QuizController extends Controller
 {
@@ -59,5 +60,23 @@ class QuizController extends Controller
             'is_visible' => $quiz->is_visible_to_student
         ]);
     }
+
+    public function showResults($quizId)
+    {
+        $quiz = Quiz::findOrFail($quizId);
+       
+        $studentResults = StudentQuizAttempt::where('quiz_id', $quizId)
+        ->join('users', 'student_quiz_attempts.student_id', '=', 'users.id')
+        ->select(
+            DB::raw("CONCAT(users.first_name, ' ', users.last_name) as student_name"),
+            'student_quiz_attempts.score',
+            'student_quiz_attempts.created_at'
+        )
+        ->orderBy('student_quiz_attempts.created_at', 'desc')
+        ->get();
+          
+        return view('quizzes.results', compact('quiz', 'studentResults'));
+    }
+
     
 }

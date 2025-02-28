@@ -50,6 +50,7 @@
                         <div class="bg-white mt-4 p-3 border shadow-sm">
                             <a href="{{ route('admin.quizzes.create') }}" class="btn btn-success mb-3">+ Add New Quiz</a>
 
+                            <div class="table-responsive">
                             <table class="table">
                                 <thead>
                                     <tr>
@@ -76,6 +77,7 @@
                                                 <div class="btn-group" role="group">
                                                     <a href="{{ route('admin.quizzes.edit', $quiz->id) }}" class="btn btn-sm btn-outline-primary"><i class="bi bi-pen"></i> Edit</a>
                                                     <a href="{{ route('admin.quizzes.questions', $quiz->id) }}" class="btn btn-sm btn-outline-primary"><i class="bi bi-eye"></i> Manage Questions</a>
+                                                    <a href="{{ route('admin.quizzes.results', $quiz->id) }}" class="btn btn-sm btn-outline-info"><i class="bi bi-people"></i> Student Results</a>
                                                     <form action="{{ route('admin.quizzes.destroy', $quiz->id) }}" method="POST" class="d-inline">
                                                         @csrf @method('DELETE')
                                                         <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('Delete this quiz?');"><i class="bi bi-trash"></i> Delete</button>
@@ -86,6 +88,7 @@
                                     @endforeach
                                 </tbody>
                             </table>
+                            </div>
                         </div>
                     </div>
                 </div>

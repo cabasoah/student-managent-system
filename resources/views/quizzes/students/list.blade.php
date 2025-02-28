@@ -18,12 +18,17 @@
                     </nav>
                     
                     <div class="mb-4 p-3 bg-white border shadow-sm">
+                        <a href="{{ route('student.quizzes.export', ['course_id' => request('course_id')]) }}" class="btn btn-primary mb-3">
+                            <i class="bi bi-download"></i> Export My Quizzes
+                        </a>
                         <table class="table table-responsive">
                             <thead>
                                 <tr>
                                     <th scope="col">Quiz Title</th>
                                     <th scope="col">Description</th>
                                     <th scope="col">Duration</th>
+                                    <th scope="col">Score</th>
+                                    <th scope="col">Total Marks</th>
                                     <th scope="col">Actions</th>
                                 </tr>
                             </thead>
@@ -34,13 +39,29 @@
                                     <td>{{ $quiz->description }}</td>
                                     <td>{{ $quiz->duration }} mins</td>
                                     <td>
-                                        <a href="{{ route('quiz.attempt', ['quiz_id' => $quiz->id]) }}" class="btn btn-sm btn-primary">
-                                            <i class="bi bi-play-circle"></i> Start Quiz
-                                        </a>
+                                        @if (isset($attemptedQuizzes[$quiz->id]))
+                                            {{ $attemptedQuizzes[$quiz->id]->score }}
+                                        @else
+                                            <span class="text-muted">Not Attempted</span>
+                                        @endif
+                                    </td>
+                                    <td>
+                                        {{ $quiz->total_marks }}</td>
+                                    <td>
+                                        @if (!isset($attemptedQuizzes[$quiz->id]))
+                                            <a href="{{ route('quiz.attempt', ['quiz_id' => $quiz->id]) }}" class="btn btn-sm btn-primary">
+                                                <i class="bi bi-play-circle"></i> Start Quiz
+                                            </a>
+                                        @else
+                                            <button class="btn btn-sm btn-secondary" disabled>
+                                                <i class="bi bi-check-circle"></i> Attempted
+                                            </button>
+                                        @endif
                                     </td>
                                 </tr>
                                 @endforeach
                             </tbody>
+                            
                         </table>
                     </div>
                 </div>

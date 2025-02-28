@@ -11,6 +11,7 @@ use App\Models\Quiz;
 use Illuminate\Support\Facades\Auth;
 use App\Interfaces\SchoolSessionInterface;
 use App\Traits\SchoolSession;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Http;
 class StudentQuizController extends Controller
@@ -27,21 +28,43 @@ class StudentQuizController extends Controller
     public function __construct(SchoolSessionInterface $schoolSessionRepository) {
         $this->schoolSessionRepository = $schoolSessionRepository;
     }
+    
     public function index(Request $request)
     {
+        $userId = Auth::id();
+        $course_id = $request->query('course_id', 0);
+        $current_school_session_id = $this->getSchoolCurrentSession();
+    
+        $quizRepository = new QuizRepository();
+        $quizzes = $quizRepository->getQuizzesForStudent($current_school_session_id, $course_id);
+    
+        $attemptedQuizzes = StudentQuizAttempt::where('student_id', $userId)
+            ->select('quiz_id', 'score')
+            ->get()
+            ->keyBy('quiz_id'); 
+        
+        foreach ($quizzes as $quiz) {
+            $choiceQuestionsCount = DB::table('questions')
+                ->where('quiz_id', $quiz->id)
+                ->whereIn('type', ['single_choice', 'multiple_choice'])
+                ->count();
 
-      $course_id = $request->query('course_id', 0);
-      $current_school_session_id = $this->getSchoolCurrentSession();
+            $openEndedMarks = DB::table('questions')
+                ->where('quiz_id', $quiz->id)
+                ->where('type', 'open_ended')
+                ->sum('max_mark');
 
-      // Use a repository to get the quizzes
-      $quizRepository = new QuizRepository();
-      $quizzes = $quizRepository->getQuizzesForStudent($current_school_session_id, $course_id);
-
-      // Pass data to the view
-      return view('quizzes.students.list', [
-          'quizzes' => $quizzes,
-      ]);
+            // Total Marks = (Single Choice + Multiple Choice Questions * 1) + Open-Ended Questions Marks
+            $quiz->total_marks = $choiceQuestionsCount + $openEndedMarks;
+        }
+    
+        return view('quizzes.students.list', [
+            'quizzes' => $quizzes,
+            'attemptedQuizzes' => $attemptedQuizzes
+        ]);
     }
+    
+
     public function attemptQuiz($quiz_id)
     {
         $student_id = Auth::user()->id;
@@ -99,7 +122,7 @@ class StudentQuizController extends Controller
             ],
             [
                 'option_id' => $question->type === 'open_ended' ? null : $request->option_id,
-                'answer_text' => $question->type === 'open_ended' ? $request->answer : null,
+                'answer_text' =>  $request->answer,
                 'class_id' => $request->class_id ?? $attempt->class_id,
                 'section_id' => $request->section_id ?? $attempt->section_id,
                 'semester_id' => $request->semester_id ?? $attempt->semester_id,
@@ -120,8 +143,8 @@ class StudentQuizController extends Controller
             'session_id' => 'nullable|integer|exists:school_sessions,id',
         ]);
     
-        $attempt = StudentQuizAttempt::findOrFail($request->attempt_id);
-    
+        $attempt = StudentQuizAttempt::with('quiz.questions.options')->findOrFail($request->attempt_id);
+
         if ($attempt->student_id !== auth()->id()) {
             return response()->json(['message' => 'Unauthorized submission'], 403);
         }
@@ -183,7 +206,7 @@ class StudentQuizController extends Controller
             'session_id' => $request->session_id ?? $attempt->session_id,
         ]);
     
-        return response()->json(['message' => 'Quiz submitted successfully', 'score' => $score]);
+        return response()->json(['message' => 'Quiz submitted successfully', 'score' => $score,'questions' => $attempt->quiz->questions]);
     }
     
     /**
@@ -217,25 +240,86 @@ class StudentQuizController extends Controller
 
     public function quizResults($attempt_id)
     {
-        $attempt = StudentQuizAttempt::with(['quiz', 'answers.question.options'])->find($attempt_id);
-
+        $attempt = StudentQuizAttempt::with(['quiz.questions.options', 'answers.option'])->find($attempt_id);
+    
         if (!$attempt) {
             return redirect()->route('home')->with('error', 'Quiz attempt not found.');
         }
-
-        // Calculate total score
-        $totalQuestions = $attempt->quiz->questions->count();
-        $correctAnswers = $attempt->answers->filter(function ($answer) {
-            return $answer->option && $answer->option->is_correct;
-        })->count();
-        
-        $score = ($totalQuestions > 0) ? round(($correctAnswers / $totalQuestions) * 100, 2) : 0;
-
+    
+        $totalMarks = 0;
+        $earnedMarks = 0;
+        $correctAnswers = 0;
+    
+        $questionsWithAnswers = [];
+    
+        $studentAnswer = $attempt->answers->where('question_id', $attempt->quiz->questions[0]->id)->first();
+      
+        foreach ($attempt->quiz->questions as $question) {
+            $studentAnswer = $attempt->answers->where('question_id', $question->id)->first();
+           
+            $studentResponseText = null;
+            $correctResponseText = null;
+            $isCorrect = false;
+    
+            if ($question->type === 'single_choice' || $question->type === 'multiple_choice') {
+                $correctOption = $question->options->where('is_correct', true)->first();
+    
+                if ($studentAnswer && $studentAnswer->option_id) {
+                    $studentResponseText = $studentAnswer->answer_text;
+                }
+    
+                if ($correctOption) {
+                    $correctResponseText = $correctOption->option_text;
+                }
+    
+                if ($studentAnswer && $correctOption && $studentAnswer->option_id == $correctOption->id) {
+                    $correctAnswers++;
+                    $earnedMarks += 1;
+                    $isCorrect = true;
+                }
+    
+                $totalMarks += 1;
+            } elseif ($question->type === 'open_ended' && $studentAnswer) {
+                $maxMark = $question->max_mark ?? 1; // Default to 1 if not set
+                $correctAnswer = strtolower(trim($question->correct_answer));
+                $studentResponse = strtolower(trim($studentAnswer->answer_text));
+    
+                $studentResponseText = $studentAnswer->answer_text;
+                $correctResponseText = $question->correct_answer;
+    
+                $similarity = levenshtein($correctAnswer, $studentResponse);
+                $maxLen = max(strlen($correctAnswer), strlen($studentResponse));
+                $matchPercentage = ($maxLen > 0) ? ((1 - ($similarity / $maxLen)) * 100) : 0;
+    
+                if ($matchPercentage >= 80) {
+                    $earnedMarks += $maxMark;
+                    $correctAnswers++;
+                    $isCorrect = true;
+                } elseif ($matchPercentage >= 50) {
+                    $earnedMarks += $maxMark / 2;
+                }
+    
+                $totalMarks += $maxMark;
+            }
+    
+            $questionsWithAnswers[] = [
+                'question' => $question->question_text,
+                'studentAnswer' => $studentResponseText ?? 'No Answer',
+                'correctAnswer' => $correctResponseText ?? 'N/A',
+                'isCorrect' => $isCorrect
+            ];
+        }
+    
+        $score = ($totalMarks > 0) ? round(($earnedMarks / $totalMarks) * 100, 2) : 0;
+    
         return view('quizzes.students.results', [
             'attempt' => $attempt,
             'score' => $score,
-            'totalQuestions' => $totalQuestions,
-            'correctAnswers' => $correctAnswers
+            'totalMarks' => $totalMarks,
+            'earnedMarks' => $earnedMarks,
+            'correctAnswers' => $correctAnswers,
+            'questionsWithAnswers' => $questionsWithAnswers
         ]);
     }
+
 }
