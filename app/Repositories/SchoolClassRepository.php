@@ -11,7 +11,7 @@ class SchoolClassRepository implements SchoolClassInterface {
         try {
             SchoolClass::create($request);
         } catch (\Exception $e) {
-            throw new \Exception('Failed to create School Class. '.$e->getMessage());
+            throw new \Exception('Failed to create School Class: ' . $e->getMessage());
         }
     }
 
@@ -20,28 +20,33 @@ class SchoolClassRepository implements SchoolClassInterface {
     }
 
     public function getAllBySessionAndTeacher($session_id, $teacher_id) {
-        return AssignedTeacher::with('schoolClass')->where('teacher_id', $teacher_id)
-                ->where('session_id', $session_id)
-                ->get();
+        return AssignedTeacher::with('schoolClass')
+            ->where([
+                'teacher_id'  => $teacher_id,
+                'session_id'  => $session_id,
+            ])
+            ->get();
     }
 
     public function getAllWithCoursesBySession($session_id) {
-        return SchoolClass::with(['courses','syllabi'])->where('session_id', $session_id)->get();
+        return SchoolClass::with(['courses', 'syllabi'])
+            ->where('session_id', $session_id)
+            ->get();
     }
 
     public function getClassesAndSections($session_id) {
-        $school_classes = $this->getAllWithCoursesBySession($session_id);
+        try {
+            $school_classes = $this->getAllWithCoursesBySession($session_id);
+            $sectionRepository = new SectionRepository();
+            $school_sections = $sectionRepository->getAllBySession($session_id);
 
-        $sectionRepository = new SectionRepository();
-
-        $school_sections = $sectionRepository->getAllBySession($session_id);
-
-        $data = [
-            'school_classes' => $school_classes,
-            'school_sections'=> $school_sections,
-        ];
-
-        return $data;
+            return [
+                'school_classes' => $school_classes,
+                'school_sections'=> $school_sections,
+            ];
+        } catch (\Exception $e) {
+            throw new \Exception('Failed to retrieve classes and sections: ' . $e->getMessage());
+        }
     }
 
     public function findById($class_id) {
@@ -50,11 +55,16 @@ class SchoolClassRepository implements SchoolClassInterface {
 
     public function update($request) {
         try {
-            SchoolClass::find($request->class_id)->update([
-                'class_name'  => $request->class_name,
+            $schoolClass = SchoolClass::find($request->class_id);
+            if (!$schoolClass) {
+                throw new \Exception('School Class not found.');
+            }
+
+            $schoolClass->update([
+                'class_name' => $request->class_name,
             ]);
         } catch (\Exception $e) {
-            throw new \Exception('Failed to update School Class. '.$e->getMessage());
+            throw new \Exception('Failed to update School Class: ' . $e->getMessage());
         }
     }
 }

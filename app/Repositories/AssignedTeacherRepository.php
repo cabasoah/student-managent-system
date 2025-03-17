@@ -17,26 +17,24 @@ class AssignedTeacherRepository implements AssignedTeacherInterface {
     }
 
     public function getTeacherCourses($session_id, $teacher_id, $semester_id) {
-        if($semester_id == 0) {
-            $semester_id = Semester::where('session_id', $session_id)
-            ->first()->id;
+        if ($semester_id == 0) {
+            $semester_id = Semester::where('session_id', $session_id)->pluck('id')->first();
+            if (!$semester_id) return collect(); // Return empty collection if no semester found
         }
-        return AssignedTeacher::with(['course', 'schoolClass', 'section'])->where('session_id', $session_id)
-                        ->where('teacher_id', $teacher_id)
-                        ->where('semester_id', $semester_id)
-                        ->get(); 
+    
+        return AssignedTeacher::with(['course', 'schoolClass', 'section'])
+                    ->where(compact('session_id', 'teacher_id', 'semester_id'))
+                    ->get();
     }
 
     public function getAssignedTeacher($session_id, $semester_id, $class_id, $section_id, $course_id) {
-        if($semester_id == 0) {
-            $semester_id = Semester::where('session_id', $session_id)
-            ->first()->id;
+        if ($semester_id == 0) {
+            $semester_id = Semester::where('session_id', $session_id)->pluck('id')->first();
+            if (!$semester_id) return null; // Prevents error if no semester found
         }
-        return AssignedTeacher::where('session_id', $session_id)
-                        ->where('semester_id', $semester_id)
-                        ->where('class_id', $class_id)
-                        ->where('section_id', $section_id)
-                        ->where('course_id', $course_id)
-                        ->first(); 
+    
+        return AssignedTeacher::where(compact('session_id', 'semester_id', 'class_id', 'section_id', 'course_id'))
+                    ->first();
     }
+    
 }

@@ -7,16 +7,19 @@ use App\Models\Semester;
 use App\Models\SchoolSession;
 
 class SemesterRepository implements SemesterInterface {
-    public function create($request) {
+    public function create($request)
+    {
         try {
-            Semester::create($request);
+            return Semester::create($request);
         } catch (\Exception $e) {
-            throw new \Exception('Failed to create School Semester. '.$e->getMessage());
+            throw new \Exception('Failed to create School Semester: ' . $e->getMessage());
         }
     }
 
     public function getAll($session_id)
     {
-        return Semester::where('session_id', $session_id)->orderBy('id', 'desc')->get();
+        return Semester::where('session_id', $session_id)
+                       ->orderByDesc('id')
+                       ->get();
     }
 }

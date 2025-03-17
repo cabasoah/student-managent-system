@@ -7,46 +7,43 @@ use App\Interfaces\SchoolSessionInterface;
 
 class SchoolSessionRepository implements SchoolSessionInterface {
     public function getLatestSession() {
-        $school_session = SchoolSession::latest()->first();
-        if($school_session){
-            return $school_session;
-        } else {
-            return (object) ['id' => 0];
-        }
+        return SchoolSession::latest()->first() ?? (object) ['id' => 0];
     }
 
     public function getAll() {
-        return SchoolSession::get();
+        return SchoolSession::all();
     }
 
     public function getPreviousSession() {
-        $lastTwoSessions = SchoolSession::orderBy('id', 'desc')
-                        ->take(2)
-                        ->get()
-                        ->toArray();
-        return (count($lastTwoSessions) < 2)? [] : $lastTwoSessions[1];
+        $lastTwoSessions = SchoolSession::orderByDesc('id')->take(2)->get();
+        return $lastTwoSessions->count() < 2 ? null : $lastTwoSessions[1];
     }
 
     public function create($request) {
         try {
-            SchoolSession::create($request);
+            return SchoolSession::create($request);
         } catch (\Exception $e) {
-            throw new \Exception('Failed to create School Session. '.$e->getMessage());
+            throw new \Exception('Failed to create School Session: ' . $e->getMessage());
         }
     }
 
     public function browse($request) {
         try {
-            if(session()->has('browse_session_id')
-                && ($request['session_id'] == $this->getLatestSession()->id)
-            ) {
+            $latestSession = $this->getLatestSession();
+            if (session()->has('browse_session_id') && ($request['session_id'] == $latestSession->id)) {
                 session()->forget(['browse_session_id', 'browse_session_name']);
             } else {
-                session(['browse_session_id' => $request['session_id']]);
-                session(['browse_session_name' => $this->getSessionById($request['session_id'])->session_name]);
+                $session = $this->getSessionById($request['session_id']);
+                if (!$session) {
+                    throw new \Exception('Invalid session ID.');
+                }
+                session([
+                    'browse_session_id' => $session->id,
+                    'browse_session_name' => $session->session_name
+                ]);
             }
         } catch (\Exception $e) {
-            throw new \Exception('Failed to set School Session for browsing. '.$e->getMessage());
+            throw new \Exception('Failed to set School Session for browsing: ' . $e->getMessage());
         }
     }
 

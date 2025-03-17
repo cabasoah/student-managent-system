@@ -32,7 +32,7 @@
                                             <td>{{$course->course_name}}</td>
                                             <td>
                                                 <div class="btn-group" role="group">
-                                                    <a href="{{route('course.mark.show', [
+                                                    {{-- <a href="{{route('course.mark.show', [
                                                         'course_id' => $course->id,
                                                         'course_name' => $course->course_name,
                                                         'semester_id' => $course->semester_id,
@@ -40,7 +40,7 @@
                                                         'session_id' => $course->session_id,
                                                         'section_id' => $class_info->section_id,
                                                         'student_id' => Auth::user()->id
-                                                        ])}}" role="button" class="btn btn-sm btn-outline-primary"><i class="bi bi-cloud-sun"></i> View Marks</a>
+                                                        ])}}" role="button" class="btn btn-sm btn-outline-primary"><i class="bi bi-cloud-sun"></i> View Marks</a> --}}
                                                     <a href="{{route('course.syllabus.index', ['course_id'  => $course->id])}}" role="button" class="btn btn-sm btn-outline-primary"><i class="bi bi-journal-text"></i> View Syllabus</a>
                                                     <a href="{{route('assignment.list.show', ['course_id' => $course->id])}}" role="button" class="btn btn-sm btn-outline-primary"><i class="bi bi-file-post"></i> View Assignments</a>
                                                     <a href="{{route('student.quizes.index', ['course_id' => $course->id])}}" role="button" class="btn btn-sm btn-outline-primary"><i class="bi bi-file-post"></i> View Quizes</a>

@@ -8,9 +8,9 @@ use App\Interfaces\SectionInterface;
 class SectionRepository implements SectionInterface {
     public function create($request) {
         try {
-            Section::create($request);
+            return Section::create($request);
         } catch (\Exception $e) {
-            throw new \Exception('Failed to create School Section. '.$e->getMessage());
+            throw new \Exception('Failed to create School Section: ' . $e->getMessage());
         }
     }
 
@@ -28,12 +28,16 @@ class SectionRepository implements SectionInterface {
 
     public function update($request) {
         try {
-            Section::find($request->section_id)->update([
-                'section_name'  => $request->section_name,
-                'room_no'       => $request->room_no,
+            $section = Section::find($request->section_id);
+            if (!$section) {
+                throw new \Exception('Section not found.');
+            }
+            return $section->update([
+                'section_name' => $request->section_name,
+                'room_no'      => $request->room_no,
             ]);
         } catch (\Exception $e) {
-            throw new \Exception('Failed to update School Section. '.$e->getMessage());
+            throw new \Exception('Failed to update School Section: ' . $e->getMessage());
         }
     }
 }

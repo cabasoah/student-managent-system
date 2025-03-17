@@ -5,70 +5,83 @@ namespace App\Repositories;
 use Carbon\Carbon;
 use App\Models\Attendance;
 use App\Interfaces\AttendanceInterface;
+use Illuminate\Support\Facades\DB;
 
 class AttendanceRepository implements AttendanceInterface {
-    public function saveAttendance($request) {
+    public function saveAttendance($data) {
         try {
-            $input = $this->prepareInput($request);
-            Attendance::insert($input);
+            DB::beginTransaction(); // Start transaction
+    
+            // Validate that student IDs exist
+            if (!isset($data['student_ids']) || empty($data['student_ids'])) {
+                throw new \Exception("Student IDs are required.");
+            }
+    
+            $input = $this->prepareInput($data);
+            Attendance::insert($input); // Bulk insert
+    
+            DB::commit(); // Commit transaction
         } catch (\Exception $e) {
-            throw new \Exception('Failed to save attendance. '.$e->getMessage());
+            DB::rollBack(); // Rollback transaction if any error occurs
+            throw new \Exception('Failed to save attendance. ' . $e->getMessage());
         }
     }
 
-    public function prepareInput($request) {
-        $input = [];
+    public function prepareInput(array $data) {
         $now = Carbon::now()->toDateTimeString();
-        for($i=0; $i < sizeof($request['student_ids']); $i++) {
-            $student_id = $request['student_ids'][$i];
-            $input[] = array(
-                'status'        => (isset($request['status'][$student_id]))?$request['status'][$student_id]:'off',
-                'class_id'      => $request['class_id'],
-                'student_id'    => $student_id,
-                'section_id'    => $request['section_id'],
-                'course_id'     => $request['course_id'],
-                'session_id'    => $request['session_id'],
-                'created_at'    => $now,
-                'updated_at'    => $now,
-            );
-        }
-        return $input;
+    
+        return array_map(function ($student_id) use ($data, $now) {
+            return [
+                'status'     => $data['status'][$student_id] ?? 'off',
+                'class_id'   => $data['class_id'],
+                'student_id' => $student_id,
+                'section_id' => $data['section_id'],
+                'course_id'  => $data['course_id'],
+                'session_id' => $data['session_id'],
+                'created_at' => $now,
+                'updated_at' => $now,
+            ];
+        }, $data['student_ids']);
     }
 
-    public function getSectionAttendance($class_id, $section_id, $session_id) {
+    public function getSectionAttendance($class_id, $section_id, $session_id, $limit = 10) {
         try {
-            return Attendance::with('student')
-                            ->where('class_id', $class_id)
-                            ->where('section_id', $section_id)
-                            ->where('session_id', $session_id)
-                            ->whereDate('created_at', '=', Carbon::today())
-                            ->get();
+            return Attendance::select(['id', 'student_id', 'status', 'created_at'])
+                            ->with('student:id,name') // Only fetch necessary columns
+                            ->where(compact('class_id', 'section_id', 'session_id'))
+                            ->whereDate('created_at', Carbon::today())
+                            ->orderBy('created_at', 'desc')
+                            ->paginate($limit);
         } catch (\Exception $e) {
-            throw new \Exception('Failed to get attendances. '.$e->getMessage());
-        }
-    }
-
-    public function getCourseAttendance($class_id, $course_id, $session_id) {
-        try {
-            return Attendance::with('student')
-                            ->where('class_id', $class_id)
-                            ->where('course_id', $course_id)
-                            ->where('session_id', $session_id)
-                            ->whereDate('created_at', '=', Carbon::today())
-                            ->get();
-        } catch (\Exception $e) {
-            throw new \Exception('Failed to get attendances. '.$e->getMessage());
+            throw new \Exception('Failed to get section attendance. ' . $e->getMessage());
         }
     }
 
-    public function getStudentAttendance($session_id, $student_id) {
+    public function getCourseAttendance($class_id, $course_id, $session_id, $limit = 10) {
         try {
-            return Attendance::with(['section','course'])
-                            ->where('student_id', $student_id)
-                            ->where('session_id', $session_id)
-                            ->get();
+            return Attendance::select(['id', 'student_id', 'status', 'created_at'])
+                            ->with('student:id,name') // Optimize related data fetching
+                            ->where(compact('class_id', 'course_id', 'session_id'))
+                            ->whereDate('created_at', Carbon::today())
+                            ->orderBy('created_at', 'desc')
+                            ->paginate($limit);
         } catch (\Exception $e) {
-            throw new \Exception('Failed to get attendances. '.$e->getMessage());
+            throw new \Exception('Failed to get course attendance. ' . $e->getMessage());
+        }
+    }
+
+    public function getStudentAttendance($session_id, $student_id, $limit = 10) {
+        try {
+            return Attendance::select(['id', 'section_id', 'course_id', 'status', 'created_at'])
+                            ->with([
+                                'section:id,name',
+                                'course:id,course_name'
+                            ]) // Fetch only necessary columns from related tables
+                            ->where(compact('session_id', 'student_id'))
+                            ->orderBy('created_at', 'desc')
+                            ->paginate($limit);
+        } catch (\Exception $e) {
+            throw new \Exception('Failed to get student attendance. ' . $e->getMessage());
         }
     }
 }
