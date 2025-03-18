@@ -14,6 +14,7 @@ class CourseRepository implements CourseInterface {
                 'course_type' => $data['course_type'],
                 'class_id'    => $data['class_id'],
                 'session_id'  => $data['session_id'],
+                'semester_id'  => $data['semester_id'],
             ]);
         } catch (\Exception $e) {
             throw new \Exception('Failed to create course: ' . $e->getMessage());

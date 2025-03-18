@@ -281,8 +281,9 @@
 
             var courseSelect = document.getElementById('course-select');
             courseSelect.options.length = 0;
-            data.courses.unshift({'id': 0,'course_name': 'Please select a course'})
-            data.courses.forEach(function(course, key) {
+            // console.log(typeof data.courses, data.courses);
+            data.courses.data.unshift({'id': 0,'course_name': 'Please select a course'})
+            data.courses.data.forEach(function(course, key) {
                 courseSelect[key] = new Option(course.course_name, course.id);
             });
         })

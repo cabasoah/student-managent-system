@@ -56,6 +56,7 @@ class CourseController extends Controller
      */
     public function store(CourseStoreRequest $request)
     {
+        // dd($request);
         try {
             $this->schoolCourseRepository->create($request->validated());
 

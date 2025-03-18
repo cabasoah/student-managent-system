@@ -29,6 +29,8 @@ services:
     environment:
       MYSQL_DATABASE: unifiedtransform
       MYSQL_ROOT_PASSWORD: cug123
+      # MYSQL_USER: laravel_user 
+      # MYSQL_PASSWORD: laravel_password
     volumes:
       - dbdata:/var/lib/mysql
       - ./mysql/my.cnf:/etc/mysql/my.cnf

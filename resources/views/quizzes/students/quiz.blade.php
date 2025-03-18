@@ -73,10 +73,10 @@
 </div>
 <script>
     let totalTime = {{$quiz->duration * 60}}; // Duration in seconds
-    let startTime = new Date("{{$attempt->started_at}}").getTime();
-    let endTime = startTime + quizDuration * 1000;
+    let startTime = new Date("{{ \Carbon\Carbon::parse($attempt->started_at)->toIso8601String() }}").getTime();
+    let endTime = startTime + totalTime  * 1000;
     // let timeLeft = localStorage.getItem('quiz_time_left') ? parseInt(localStorage.getItem('quiz_time_left')) : totalTime;
-    let interval;
+    let timerInterval;
 
     let currentQuestion = 0;
     let questions;
@@ -96,7 +96,7 @@
     }
 
     function startTimer() {
-        let timerInterval = setInterval(() => {
+           timerInterval = setInterval(() => {
             let now = new Date().getTime();
             let timeLeft = Math.max(0, Math.floor((endTime - now) / 1000));
 
@@ -145,39 +145,39 @@
     }
 
     function saveAnswer(questionId, optionId, answerValue) {
-    const attemptId = document.getElementById('attempt_id').value;
-    const classId = document.getElementById('class_id').value;
-    const sectionId = document.getElementById('section_id').value;
-    const semesterId = document.getElementById('semester_id').value;
-    const sessionId = document.getElementById('session_id').value;
-    
-    fetch('/student-quizzes/save-answer', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
-        },
-        body: JSON.stringify({
-            attempt_id: attemptId,
-            question_id: questionId,
-            answer: answerValue,
-            option_id: optionId, 
-            class_id: classId,
-            section_id: sectionId,
-            semester_id: semesterId,
-            session_id: sessionId
+        const attemptId = document.getElementById('attempt_id').value;
+        const classId = document.getElementById('class_id').value;
+        const sectionId = document.getElementById('section_id').value;
+        const semesterId = document.getElementById('semester_id').value;
+        const sessionId = document.getElementById('session_id').value;
+        
+        fetch('/student-quizzes/save-answer', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+            },
+            body: JSON.stringify({
+                attempt_id: attemptId,
+                question_id: questionId,
+                answer: answerValue,
+                option_id: optionId, 
+                class_id: classId,
+                section_id: sectionId,
+                semester_id: semesterId,
+                session_id: sessionId
+            })
         })
-    })
-    .then(response => response.json().then(data => ({ status: response.status, body: data })))
-    .then(({ status, body }) => {
-        if (status === 200) {
-            console.log('Answer saved successfully:', body.message);
-        } else {
-            console.error(`Failed to save answer (Status ${status}):`, body);
-        }
-    })
-    .catch(err => console.error('Error saving answer:', err));
-}
+        .then(response => response.json().then(data => ({ status: response.status, body: data })))
+        .then(({ status, body }) => {
+            if (status === 200) {
+                console.log('Answer saved successfully:', body.message);
+            } else {
+                console.error(`Failed to save answer (Status ${status}):`, body);
+            }
+        })
+        .catch(err => console.error('Error saving answer:', err));
+    }
 
 
     function submitQuiz() {
@@ -205,7 +205,8 @@
         }
 
         const getFieldValue = (id) => document.getElementById(id) ? document.getElementById(id).value : null;
-
+        console.log(getFieldValue('class_id'), getFieldValue('section_id'), getFieldValue('semester_id'), getFieldValue('session_id'));
+        
         const requestBody = {
             attempt_id: attemptInput.value,
             class_id: getFieldValue('class_id'),
