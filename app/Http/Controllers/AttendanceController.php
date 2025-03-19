@@ -151,7 +151,9 @@ class AttendanceController extends Controller
 
         try {
             $academic_setting = $this->academicSettingRepository->getAcademicSetting();
+           
             if($academic_setting->attendance_type == 'section') {
+
                 $attendances = $attendanceRepository->getSectionAttendance($class_id, $section_id, $current_school_session_id);
             } else {
                 $attendances = $attendanceRepository->getCourseAttendance($class_id, $course_id, $current_school_session_id);

@@ -26,7 +26,7 @@
                                     <tr>
                                         <th scope="col">Status</th>
                                         <th scope="col">Date</th>
-                                        <th scope="col">Course</th>
+                                        <th scope="col">Section</th>
                                     </tr>
                                 </thead>
                                 <tbody>

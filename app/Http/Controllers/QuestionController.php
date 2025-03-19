@@ -81,7 +81,7 @@ class QuestionController extends Controller
             'options.*.text' => 'required|string',
             'options.*.is_correct' => 'nullable|boolean',
             'correct_answer' => 'nullable|string|required_if:question_type,open_ended',
-            'max_mark' => 'nullable|integer|min:1|required_if:question_type,open_ended',
+            'max_mark' => 'nullable|integer|required_if:question_type,open_ended',
         ]);
     
         // Update question details

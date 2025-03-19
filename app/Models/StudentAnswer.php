@@ -10,7 +10,7 @@ class StudentAnswer extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['attempt_id', 'question_id', 'option_id', 'answer_text', 'class_id', 'section_id', 'semester_id', 'session_id'];
+    protected $fillable = ['attempt_id', 'question_id', 'option_id', 'answer_text', 'class_id', 'section_id', 'semester_id', 'session_id','marks_awarded'];
 
     // A student answer belongs to a quiz attempt
     public function attempt() {

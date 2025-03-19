@@ -47,7 +47,7 @@ class AttendanceRepository implements AttendanceInterface {
     public function getSectionAttendance($class_id, $section_id, $session_id, $limit = 10) {
         try {
             return Attendance::select(['id', 'student_id', 'status', 'created_at'])
-                            ->with('student:id,name') // Only fetch necessary columns
+                            ->with('student:id,first_name,last_name') // Only fetch necessary columns
                             ->where(compact('class_id', 'section_id', 'session_id'))
                             ->whereDate('created_at', Carbon::today())
                             ->orderBy('created_at', 'desc')
@@ -74,7 +74,7 @@ class AttendanceRepository implements AttendanceInterface {
         try {
             return Attendance::select(['id', 'section_id', 'course_id', 'status', 'created_at'])
                             ->with([
-                                'section:id,name',
+                                'section:id,section_name',
                                 'course:id,course_name'
                             ]) // Fetch only necessary columns from related tables
                             ->where(compact('session_id', 'student_id'))

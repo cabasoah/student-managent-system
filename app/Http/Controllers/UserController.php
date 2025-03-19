@@ -12,7 +12,9 @@ use App\Repositories\PromotionRepository;
 use App\Http\Requests\StudentStoreRequest;
 use App\Http\Requests\TeacherStoreRequest;
 use App\Interfaces\SchoolSessionInterface;
+use App\Models\User;
 use App\Repositories\StudentParentInfoRepository;
+use Illuminate\Support\Facades\Storage;
 
 class UserController extends Controller
 {
@@ -183,4 +185,34 @@ class UserController extends Controller
 
         return view('teachers.list', $data);
     }
+
+    public function deleteTeacher($id)
+    {
+        $teacher = User::findOrFail($id);
+
+        // Delete associated profile photo if exists
+        if ($teacher->photo && Storage::disk('public')->exists($teacher->photo)) {
+            Storage::disk('public')->delete($teacher->photo);
+        }
+
+        $teacher->delete();
+
+        return redirect()->back()->with('status', 'Teacher deleted successfully.');
+    }
+
+    public function deleteStudent($id)
+    {
+        $student = User::findOrFail($id);
+
+        // Check if a photo exists and delete it
+        if ($student->photo && Storage::disk('public')->exists($student->photo)) {
+            Storage::disk('public')->delete($student->photo);
+        }
+
+        // Delete the student record
+        $student->delete();
+
+        return redirect()->back()->with('status', 'Student deleted successfully.');
+    }
+
 }

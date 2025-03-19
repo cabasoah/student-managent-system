@@ -75,7 +75,7 @@
                                 <textarea name="correct_answer" id="correct_answer" class="form-control" rows="2">{{ old('correct_answer', $question->correct_answer ?? '') }}</textarea>
 
                                 <label for="max_mark" class="form-label mt-3">Maximum Marks</label>
-                                <input type="number" name="max_mark" id="max_mark" class="form-control" value="{{ old('max_mark', $question->max_mark ?? '') }}" min="1">
+                                <input type="number" name="max_mark" id="max_mark" class="form-control" value="{{ old('max_mark', $question->max_mark ?? 0) }}" min="0">
                             </div>
 
                             <!-- Submit Button -->

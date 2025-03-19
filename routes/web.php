@@ -82,6 +82,7 @@ Route::middleware(['auth'])->group(function () {
         // Student
         Route::post('student/create', [UserController::class, 'storeStudent'])->name('student.create');
         Route::post('student/update', [UserController::class, 'updateStudent'])->name('student.update');
+
     });
 
 
@@ -106,6 +107,7 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/teachers/edit/{id}', [UserController::class, 'editTeacher'])->name('teacher.edit.show');
     Route::get('/teachers/view/list', [UserController::class, 'getTeacherList'])->name('teacher.list.show');
     Route::get('/teachers/view/profile/{id}', [UserController::class, 'showTeacherProfile'])->name('teacher.profile.show');
+    Route::post('teachers/delete/{id}', [UserController::class, 'deleteTecher'])->name('teachers.destroy');
 
     //Students
     Route::get('/students/add', [UserController::class, 'createStudent'])->name('student.create.show');
@@ -113,6 +115,7 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/students/view/list', [UserController::class, 'getStudentList'])->name('student.list.show');
     Route::get('/students/view/profile/{id}', [UserController::class, 'showStudentProfile'])->name('student.profile.show');
     Route::get('/students/view/attendance/{id}', [AttendanceController::class, 'showStudentAttendance'])->name('student.attendance.show');
+    Route::post('/students/delete/{id}', [UserController::class, 'deleteStudent'])->name('students.destroy');
 
     // Marks
     Route::get('/marks/create', [MarkController::class, 'create'])->name('course.mark.create');

@@ -8,12 +8,12 @@
             <div class="row pt-2">
                 <div class="col ps-4">
                     <h1 class="display-6 mb-3">
-                        <i class="bi bi-person-lines-fill"></i> Add Teacher
+                        <i class="bi bi-person-lines-fill"></i> Add Lecturer
                     </h1>
                     <nav aria-label="breadcrumb">
                         <ol class="breadcrumb">
                             <li class="breadcrumb-item"><a href="{{route('home')}}">Home</a></li>
-                            <li class="breadcrumb-item active" aria-current="page">Add Teacher</li>
+                            <li class="breadcrumb-item active" aria-current="page">Add Lecturer</li>
                         </ol>
                     </nav>
 

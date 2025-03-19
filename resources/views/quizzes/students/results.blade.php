@@ -39,15 +39,22 @@
                                     @foreach ($questionsWithAnswers as $item)
                                         <li class="list-group-item">
                                             <strong>Q:</strong> {{ $item['question'] }}
-                        
+
                                             <p class="mt-2">
                                                 <strong>Your Answer:</strong> {{ $item['studentAnswer'] }}
-                                                @if (!$item['isCorrect'])
+                                                
+                                                {{-- Show "Incorrect" only for single-choice and multiple-choice questions --}}
+                                                @if (in_array($item['questionType'], ['single_choice', 'multiple_choice']) && !$item['isCorrect'])
                                                     <span class="text-danger">(Incorrect)</span>
                                                 @endif
                                             </p>
-                        
+
                                             <p><strong>Correct Answer:</strong> <span class="text-success">{{ $item['correctAnswer'] }}</span></p>
+
+                                            {{-- Show marks awarded only for open-ended questions --}}
+                                            @if ($item['questionType'] === 'open_ended')
+                                                <p>Marks Awarded: {{ $item['awardedMark'] }} / {{ $item['maxMark'] }}</p>
+                                            @endif
                                         </li>
                                     @endforeach
                                 </ul>

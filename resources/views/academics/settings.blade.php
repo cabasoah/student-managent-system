@@ -118,7 +118,7 @@
                             </div>
                             <div class="col-md-4 mb-4">
                                 <div class="p-3 border bg-light shadow-sm">
-                                <h6>Create Section</h6>
+                                <h6>Create Section (eg. Regular, Weekend)</h6>
                                     <form action="{{route('school.section.create')}}" method="POST">
                                         @csrf
                                         <input type="hidden" name="session_id" value="{{$current_school_session_id}}">
@@ -186,12 +186,12 @@
                             </div>
                             <div class="col-md-4 mb-4">
                                 <div class="p-3 border bg-light shadow-sm">
-                                    <h6>Assign Teacher</h6>
+                                    <h6>Assign Lecturer</h6>
                                     <form action="{{route('school.teacher.assign')}}" method="POST">
                                         @csrf
                                         <input type="hidden" name="session_id" value="{{$current_school_session_id}}">
                                         <div class="mb-3">
-                                            <p class="mt-2">Select Teacher:<sup><i class="bi bi-asterisk text-primary"></i></sup></p>
+                                            <p class="mt-2">Select Lecturer:<sup><i class="bi bi-asterisk text-primary"></i></sup></p>
                                             <select class="form-select form-select-sm" aria-label=".form-select-sm" name="teacher_id" required>
                                                 @isset($teachers)
                                                     @foreach ($teachers as $teacher)
@@ -241,7 +241,7 @@
                                     <form action="{{route('school.final.marks.submission.status.update')}}" method="POST">
                                         @csrf
                                         <p class="text-danger">
-                                            <small><i class="bi bi-exclamation-diamond-fill me-2"></i> Usually teachers are allowed to submit final marks just before the end of a "Semester".</small>
+                                            <small><i class="bi bi-exclamation-diamond-fill me-2"></i> Usually Lecturers are allowed to submit final marks just before the end of a "Semester".</small>
                                         </p>
                                         <p class="text-primary">
                                             <small><i class="bi bi-exclamation-diamond-fill me-2"></i> Disallow at the start of a "Semester".</small>
