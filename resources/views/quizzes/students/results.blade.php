@@ -1,68 +1,204 @@
 @extends('layouts.app')
-
+@push('styles')
+<style>
+    /* Custom styles for the circular progress */
+    .progress-circle circle {
+        transition: stroke-dashoffset 0.5s ease;
+        transform: rotate(-90deg);
+        transform-origin: 50% 50%;
+    }
+    
+    /* Card styling */
+    .card {
+        border-radius: 0.5rem;
+    }
+    
+    .card-header {
+        border-top-left-radius: 0.5rem !important;
+        border-top-right-radius: 0.5rem !important;
+    }
+    
+    /* Accordion styling */
+    .accordion-item {
+        border-radius: 0.5rem !important;
+        overflow: hidden;
+        transition: all 0.2s ease;
+    }
+    
+    .accordion-button {
+        padding: 1rem 1.25rem;
+    }
+    
+    .accordion-button:not(.collapsed) {
+        background-color: rgba(var(--bs-primary-rgb), 0.05);
+        box-shadow: none;
+    }
+    
+    .accordion-button:focus {
+        box-shadow: none;
+        border-color: rgba(var(--bs-primary-rgb), 0.25);
+    }
+</style>
+@endpush
 @section('content')
-<div class="container">
+<div class="container py-4">
     <div class="row justify-content-start">
         @include('layouts.left-menu')
 
         <div class="col-xs-11 col-sm-11 col-md-11 col-lg-10 col-xl-10 col-xxl-10">
             <div class="row pt-2">
                 <div class="col ps-4">
-                    <h1 class="display-6 mb-3">
-                        <i class="bi bi-clipboard-check"></i> Quiz Results
+                    <!-- Header -->
+                    <h1 class="display-6 mb-2 d-flex align-items-center">
+                        <i class="bi bi-clipboard-check text-primary me-2"></i> Quiz Results
                     </h1>
 
-                    <nav aria-label="breadcrumb">
+                    <nav aria-label="breadcrumb" class="mb-4">
                         <ol class="breadcrumb">
                             <li class="breadcrumb-item"><a href="{{ route('home') }}">Home</a></li>
                             <li class="breadcrumb-item active" aria-current="page">Quiz Results</li>
                         </ol>
                     </nav>
 
-                    <div class="bg-white p-4 border shadow-sm">
-                        <h2 class="mb-4">Quiz: {{ $attempt->quiz->title }}</h2>
-
-                        <div class="card mb-4">
-                            <div class="card-body text-center">
-                                <h4>Your Score: <span class="text-primary">{{ $score }}%</span></h4>
-                                <p class="text-muted">
-                                    Earned Marks: <strong>{{ $earnedMarks }} / {{ $totalMarks }}</strong><br>
-                                    Correct Answers: <strong>{{ $correctAnswers }} / {{ $attempt->quiz->questions->count() }}</strong>
-                                </p>
-                            </div>
+                    <!-- Main Content -->
+                    <div class="card shadow-sm border-0 mb-4">
+                        <div class="card-header bg-white py-3">
+                            <h2 class="card-title h4 mb-0">{{ $attempt->quiz->title }}</h2>
                         </div>
+                        
+                        <div class="card-body">
+                            <!-- Score Summary -->
+                            <div class="card bg-light border-0 mb-5">
+                                <div class="card-body py-4">
+                                    <div class="d-flex flex-column align-items-center justify-content-center">
+                                        <!-- Circular Progress -->
+                                        <div class="position-relative mb-4" style="width: 150px; height: 150px;">
+                                            <div class="progress-circle">
+                                                <svg class="w-100 h-100" viewBox="0 0 100 100">
+                                                    <circle 
+                                                        class="text-secondary opacity-25" 
+                                                        stroke="currentColor" 
+                                                        stroke-width="10" 
+                                                        fill="transparent" 
+                                                        r="40" 
+                                                        cx="50" 
+                                                        cy="50" 
+                                                    />
+                                                    <circle 
+                                                        class="text-primary" 
+                                                        stroke="currentColor" 
+                                                        stroke-width="10" 
+                                                        stroke-dasharray="251.2"
+                                                        stroke-dashoffset="{{ 251.2 - (251.2 * $score) / 100 }}" 
+                                                        stroke-linecap="round" 
+                                                        fill="transparent" 
+                                                        r="40" 
+                                                        cx="50" 
+                                                        cy="50" 
+                                                    />
+                                                </svg>
+                                                <div class="position-absolute top-50 start-50 translate-middle text-center">
+                                                    <span class="fs-1 fw-bold">{{ $score }}%</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        
+                                        <div class="row justify-content-center" style="max-width: 400px;">
+                                            <div class="col-6 text-center">
+                                                <p class="text-muted small mb-1">Earned Marks</p>
+                                                <p class="fw-semibold fs-5">
+                                                    {{ $earnedMarks }} / {{ $totalMarks }}
+                                                </p>
+                                            </div>
+                                            <div class="col-6 text-center">
+                                                <p class="text-muted small mb-1">Correct Answers</p>
+                                                <p class="fw-semibold fs-5">
+                                                    {{ $correctAnswers }} / {{ $attempt->quiz->questions->count() }}
+                                                </p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
 
-                        <h3 class="mt-4">Question Review</h3>
-                        <div class="card">
-                            <div class="card-body">
-                                <ul class="list-group">
-                                    @foreach ($questionsWithAnswers as $item)
-                                        <li class="list-group-item">
-                                            <strong>Q:</strong> {{ $item['question'] }}
-
-                                            <p class="mt-2">
-                                                <strong>Your Answer:</strong> {{ $item['studentAnswer'] }}
+                            <!-- Question Review -->
+                            <h3 class="mb-4">Question Review</h3>
+                            <div class="accordion" id="questionAccordion">
+                                @foreach ($questionsWithAnswers as $index => $item)
+                                    @php
+                                        $isCorrect = isset($item['isCorrect']) ? $item['isCorrect'] : null;
+                                        $borderClass = $isCorrect === false ? 'border-danger border-opacity-25' : 
+                                                      ($isCorrect === true ? 'border-success border-opacity-25' : '');
+                                    @endphp
+                                    
+                                    <div class="accordion-item mb-3 {{ $borderClass }}">
+                                        <h2 class="accordion-header" id="heading{{ $index }}">
+                                            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapse{{ $index }}" aria-expanded="false" aria-controls="collapse{{ $index }}">
+                                                <div class="d-flex justify-content-between align-items-center w-100 pe-3">
+                                                    <div>
+                                                        <span class="text-muted me-2">Q{{ $index + 1 }}:</span>
+                                                        {{ $item['question'] }}
+                                                    </div>
+                                                    <div class="ms-auto">
+                                                        @if($isCorrect === true)
+                                                            <i class="bi bi-check-circle-fill text-success"></i>
+                                                        @elseif($isCorrect === false)
+                                                            <i class="bi bi-x-circle-fill text-danger"></i>
+                                                        @elseif($item['questionType'] === 'open_ended')
+                                                            <span class="badge bg-primary bg-opacity-10 text-primary">
+                                                                {{ $item['awardedMark'] }}/{{ $item['maxMark'] }}
+                                                            </span>
+                                                        @endif
+                                                    </div>
+                                                </div>
+                                            </button>
+                                        </h2>
+                                        <div id="collapse{{ $index }}" class="accordion-collapse collapse" aria-labelledby="heading{{ $index }}" data-bs-parent="#questionAccordion">
+                                            <div class="accordion-body">
+                                                <div class="mb-3">
+                                                    <p class="text-muted small mb-1">Your Answer:</p>
+                                                    <p class="{{ $isCorrect === false ? 'text-danger' : '' }}">
+                                                        {{ $item['studentAnswer'] }}
+                                                        @if(in_array($item['questionType'], ['single_choice', 'multiple_choice']) && !$isCorrect)
+                                                            <span class="text-danger ms-2">(Incorrect)</span>
+                                                        @endif
+                                                    </p>
+                                                </div>
                                                 
-                                                {{-- Show "Incorrect" only for single-choice and multiple-choice questions --}}
-                                                @if (in_array($item['questionType'], ['single_choice', 'multiple_choice']) && !$item['isCorrect'])
-                                                    <span class="text-danger">(Incorrect)</span>
+                                                <div class="mb-3">
+                                                    <p class="text-muted small mb-1">Correct Answer:</p>
+                                                    <p class="text-success">{{ $item['correctAnswer'] }}</p>
+                                                </div>
+                                                
+                                                @if($item['questionType'] === 'open_ended')
+                                                    <div>
+                                                        <p class="text-muted small mb-1">Marks Awarded:</p>
+                                                        <div class="d-flex align-items-center gap-3">
+                                                            <div class="progress" style="height: 8px; width: 150px;">
+                                                                <div class="progress-bar" role="progressbar" 
+                                                                    style="width: {{ ($item['awardedMark'] / $item['maxMark']) * 100 }}%;" 
+                                                                    aria-valuenow="{{ $item['awardedMark'] }}" 
+                                                                    aria-valuemin="0" 
+                                                                    aria-valuemax="{{ $item['maxMark'] }}">
+                                                                </div>
+                                                            </div>
+                                                            <span class="small fw-medium">
+                                                                {{ $item['awardedMark'] }} / {{ $item['maxMark'] }}
+                                                            </span>
+                                                        </div>
+                                                    </div>
                                                 @endif
-                                            </p>
-
-                                            <p><strong>Correct Answer:</strong> <span class="text-success">{{ $item['correctAnswer'] }}</span></p>
-
-                                            {{-- Show marks awarded only for open-ended questions --}}
-                                            @if ($item['questionType'] === 'open_ended')
-                                                <p>Marks Awarded: {{ $item['awardedMark'] }} / {{ $item['maxMark'] }}</p>
-                                            @endif
-                                        </li>
-                                    @endforeach
-                                </ul>
+                                            </div>
+                                        </div>
+                                    </div>
+                                @endforeach
                             </div>
                         </div>
-
-                        <div class="mt-4 text-center">
-                            <a href="{{ route('home') }}" class="btn btn-primary"><i class="bi bi-house-door"></i> Dashboard</a>
+                        
+                        <div class="card-footer bg-white text-center py-4">
+                            <a href="{{ route('home') }}" class="btn btn-primary">
+                                <i class="bi bi-house-door me-1"></i> Dashboard
+                            </a>
                         </div>
                     </div>
                 </div>
@@ -71,4 +207,14 @@
         </div>
     </div>
 </div>
+
+<script>
+    // Initialize Bootstrap tooltips
+    document.addEventListener('DOMContentLoaded', function() {
+        var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
+        var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+            return new bootstrap.Tooltip(tooltipTriggerEl)
+        });
+    });
+</script>
 @endsection
