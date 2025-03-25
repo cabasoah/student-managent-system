@@ -48,7 +48,9 @@
                                 <label for="duration" class="form-label">Quiz Duration (Minutes)</label>
                                 <input type="number" name="duration" id="duration" class="form-control" value="{{ old('duration', $quiz->duration ?? '') }}" min="1">
                             </div>
-
+                            <div class="mb-3">
+                                @include('components.ckeditor.editor', ['name' => 'instructions','value' => old('instructions', $quiz->instructions ?? ''), 'label' => 'General Instructions'])
+                            </div>
                             <button type="submit" class="btn btn-success">Save Quiz</button>
                             <a href="{{ route('admin.quizzes.index') }}" class="btn btn-secondary">Cancel</a>
                         </form>

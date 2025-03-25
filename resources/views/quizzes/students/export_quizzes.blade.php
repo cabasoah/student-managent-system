@@ -6,6 +6,7 @@
             <th>Duration (mins)</th>
             <th>Total Marks</th>
             <th>Student Score</th>
+            <th>Grade</th>
         </tr>
     </thead>
     <tbody>
@@ -16,6 +17,7 @@
             <td>{{ $quiz->duration }}</td>
             <td>{{ $quiz->total_marks }}</td>
             <td>{{ $quiz->student_score }}</td>
+            <td>{{ getGrade($quiz->student_score, $quiz->total_marks) }}</td>
         </tr>
         @endforeach
     </tbody>

@@ -60,8 +60,24 @@ class StudentQuizController extends Controller
     
         return view('quizzes.students.list', [
             'quizzes' => $quizzes,
-            'attemptedQuizzes' => $attemptedQuizzes
+            'attemptedQuizzes' => $attemptedQuizzes,
+            'course_id' => $course_id
         ]);
+    }
+
+    public function quizInstructions($quiz_id) {
+        $quiz = Quiz::with('questions.options')->findOrFail($quiz_id);
+        $totalMarks = $quiz->questions->reduce(function ($carry, $question) {
+            if (in_array($question->type, ['single_choice', 'multiple_choice'])) {
+                return $carry + 1; // Single & multiple-choice questions count as 1 mark each
+            } elseif ($question->type === 'open_ended') {
+                return $carry + $question->max_mark; // Open-ended questions contribute their max mark
+            }
+            return $carry;
+        }, 0);
+        
+        $quiz->total_marks = $totalMarks;
+        return view('quizzes.students.quiz_instructions', compact('quiz'));
     }
     
 
@@ -69,7 +85,7 @@ class StudentQuizController extends Controller
     {
         $student_id = Auth::user()->id;
         $quiz = Quiz::with('questions.options')->findOrFail($quiz_id);
-        // dd($quiz);
+
         $attempt = StudentQuizAttempt::firstOrCreate(
             [
                 'student_id' => $student_id,

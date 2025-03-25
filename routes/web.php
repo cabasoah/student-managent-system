@@ -167,6 +167,7 @@ Route::middleware(['auth'])->group(function () {
     // Quizes - Student
     Route::prefix('student-quizzes')->group(function () {
         Route::get('/', [StudentQuizController::class, 'index'])->name('student.quizes.index');
+        Route::get('/quiz/{quiz_id}/instructions', [StudentQuizController::class, 'quizInstructions'])->name('quiz.instructions');
         Route::get('/attempt/{quiz_id}', [StudentQuizController::class, 'attemptQuiz'])->name('quiz.attempt');
     });
     Route::post('/student-quizzes/save-answer', [StudentQuizController::class, 'saveAnswer'])->name('quiz.save.answer');

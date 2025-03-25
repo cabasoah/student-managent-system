@@ -27,8 +27,9 @@
                                     <th scope="col">Quiz Title</th>
                                     <th scope="col">Description</th>
                                     <th scope="col">Duration</th>
-                                    <th scope="col">Score</th>
+                                    <th scope="col">Earned Marks</th>
                                     <th scope="col">Total Marks</th>
+                                    <th scope="col">Grade</th>
                                     <th scope="col">Actions</th>
                                 </tr>
                             </thead>
@@ -46,10 +47,18 @@
                                         @endif
                                     </td>
                                     <td>
-                                        {{ $quiz->total_marks }}</td>
+                                        {{ $quiz->total_marks }}
+                                    </td>
+                                    <td class="fw-bold">
+                                        @if (isset($attemptedQuizzes[$quiz->id]))
+                                            {{ getGrade($attemptedQuizzes[$quiz->id]->score,$quiz->total_marks) }}
+                                        @else
+                                            <span class="text-muted">Not Attempted</span>
+                                        @endif
+                                    </td>
                                     <td>
                                         @if (!isset($attemptedQuizzes[$quiz->id]))
-                                            <a href="{{ route('quiz.attempt', ['quiz_id' => $quiz->id]) }}" class="btn btn-sm btn-primary">
+                                            <a href="{{ route('quiz.instructions', ['quiz_id' => $quiz->id]) }}" class="btn btn-sm btn-primary">
                                                 <i class="bi bi-play-circle"></i> Start Quiz
                                             </a>
                                         @else
@@ -70,4 +79,5 @@
         </div>
     </div>
 </div>
+
 @endsection

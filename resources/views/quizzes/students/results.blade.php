@@ -67,56 +67,33 @@
                         </div>
                         
                         <div class="card-body">
-                            <!-- Score Summary -->
+                          <!-- Score Summary Table -->
                             <div class="card bg-light border-0 mb-5">
                                 <div class="card-body py-4">
-                                    <div class="d-flex flex-column align-items-center justify-content-center">
-                                        <!-- Circular Progress -->
-                                        <div class="position-relative mb-4" style="width: 150px; height: 150px;">
-                                            <div class="progress-circle">
-                                                <svg class="w-100 h-100" viewBox="0 0 100 100">
-                                                    <circle 
-                                                        class="text-secondary opacity-25" 
-                                                        stroke="currentColor" 
-                                                        stroke-width="10" 
-                                                        fill="transparent" 
-                                                        r="40" 
-                                                        cx="50" 
-                                                        cy="50" 
-                                                    />
-                                                    <circle 
-                                                        class="text-primary" 
-                                                        stroke="currentColor" 
-                                                        stroke-width="10" 
-                                                        stroke-dasharray="251.2"
-                                                        stroke-dashoffset="{{ 251.2 - (251.2 * $score) / 100 }}" 
-                                                        stroke-linecap="round" 
-                                                        fill="transparent" 
-                                                        r="40" 
-                                                        cx="50" 
-                                                        cy="50" 
-                                                    />
-                                                </svg>
-                                                <div class="position-absolute top-50 start-50 translate-middle text-center">
-                                                    <span class="fs-1 fw-bold">{{ $score }}%</span>
-                                                </div>
-                                            </div>
-                                        </div>
-                                        
-                                        <div class="row justify-content-center" style="max-width: 400px;">
-                                            <div class="col-6 text-center">
-                                                <p class="text-muted small mb-1">Earned Marks</p>
-                                                <p class="fw-semibold fs-5">
-                                                    {{ $earnedMarks }} / {{ $totalMarks }}
-                                                </p>
-                                            </div>
-                                            <div class="col-6 text-center">
-                                                <p class="text-muted small mb-1">Correct Answers</p>
-                                                <p class="fw-semibold fs-5">
-                                                    {{ $correctAnswers }} / {{ $attempt->quiz->questions->count() }}
-                                                </p>
-                                            </div>
-                                        </div>
+                                    <h5 class="text-center mb-3">Quiz Summary</h5>
+                                    <div class="table-responsive">
+                                        <table class="table table-bordered text-center">
+                                            <thead class="table-light">
+                                                <tr>
+                                                    <th>Score (%)</th>
+                                                    <th>Earned Marks</th>
+                                                    <th>Total Marks</th>
+                                                    <th>Correct Answers</th>
+                                                    <th>Total Questions</th>
+                                                    <th>Grade</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                <tr>
+                                                    <td class="fw-bold">{{ $score }}%</td>
+                                                    <td>{{ $earnedMarks }}</td>
+                                                    <td>{{ $totalMarks }}</td>
+                                                    <td>{{ $correctAnswers }}</td>
+                                                    <td>{{ $attempt->quiz->questions->count() }}</td>
+                                                    <td class="fw-bold">{{ getGrade($earnedMarks, $totalMarks) }}</td>
+                                                </tr>
+                                            </tbody>
+                                        </table>
                                     </div>
                                 </div>
                             </div>

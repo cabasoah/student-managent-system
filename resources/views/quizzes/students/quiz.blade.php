@@ -443,7 +443,6 @@
 
     function submitQuiz() {
         localStorage.removeItem("remainingTime");
-        clearInterval(timerInterval);
         
         if (quizSubmitted) return;
         quizSubmitted = true;

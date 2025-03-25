@@ -1,8 +1,8 @@
 <script src="https://cdn.ckeditor.com/ckeditor5/30.0.0/classic/ckeditor.js"></script>
 
 <div class="mb-3">
-    <label for="editor" class="form-label">Write Note:</label>
-    <textarea name="{{$name}}" class="form-control" id="editor" rows="10" placeholder="Write here..."></textarea>
+    <label for="editor" class="form-label">{{ $label ?? 'Write Note:' }}</label>
+    <textarea name="{{$name}}" class="form-control" id="editor" rows="10" placeholder="Write here...">{{ $value ?? '' }}</textarea>
 </div>
 <script>
     function DisallowNestingTables( editor ) {
