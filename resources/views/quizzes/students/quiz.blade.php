@@ -293,7 +293,7 @@
         if (savedTime) {
             totalTime = parseInt(savedTime); // Restore remaining seconds
         } else {
-            totalTime = 600; // Default time in seconds (10 minutes as an example)
+            totalTime = {{$quiz->duration * 60}}; 
         }
 
         endTime = new Date().getTime() + totalTime * 1000; // Set countdown end time
@@ -308,7 +308,6 @@
             if (timeLeft <= 0) {
                 clearInterval(timerInterval);
                 localStorage.removeItem("remainingTime"); // Clear storage when time is up
-                alert("Time is up! Submitting the quiz...");
                 submitQuiz();
             }
         }, 1000);
@@ -342,6 +341,7 @@
         } else {
             btn.classList.add('btn-unanswered'); // Gray for unanswered questions
         }
+        updateQuestionCounter(); 
 
     });
 }
@@ -379,6 +379,7 @@
             questions[currentQuestion].style.display = 'block';
             updateProgressBar();
             updateNavigator();
+            updateQuestionCounter(); 
         }
 
         document.getElementById('prev-btn').disabled = currentQuestion === 0;
@@ -400,12 +401,22 @@
             questions[currentQuestion].style.display = 'block';
             updateProgressBar();
             updateNavigator();
+            updateQuestionCounter(); 
         }
 
+        // Update button states
         document.getElementById('prev-btn').disabled = currentQuestion === 0;
-        document.getElementById('next-btn').disabled = currentQuestion === questions.length - 1;
+        
+        const nextBtn = document.getElementById('next-btn');
+        nextBtn.disabled = false; // Always enable next button when going back
+        nextBtn.innerText = "Next"; // Reset to "Next" when not on last question
+        nextBtn.onclick = nextQuestion;
     }
 
+    function updateQuestionCounter() {
+        const counterElement = document.getElementById('question-counter');
+        counterElement.textContent = `Question ${currentQuestion + 1} of ${questions.length}`;
+    }
     function saveAnswer(questionId, optionId, answerValue) {
         const attemptId = document.getElementById('attempt_id').value;
         const classId = document.getElementById('class_id').value;

@@ -34,7 +34,7 @@
                     @auth
                         <a href="{{ url('/home') }}" class="text-sm text-gray-700 underline">Home</a>
                     @else
-                        <a href="{{ route('login') }}" class="text-gray-900 dark:text-white" style="border: 1px solid #1a202c;padding: 5px;border-radius: 5px;">Login</a>
+                        {{-- <a href="{{ route('login') }}" class="text-gray-900 dark:text-white" style="border: 1px solid #1a202c;padding: 5px;border-radius: 5px;">Login</a> --}}
 
                         {{-- @if (Route::has('register'))
                             <a href="{{ route('register') }}" class="ml-4 text-sm text-gray-700 underline">Register</a>
@@ -52,7 +52,19 @@
 
                     <div class="ml-4 text-center text-sm text-gray-500 sm:text-right sm:ml-0">
                         <h2>Student Management System</h2>
-                        {{-- <p>Copyright &copy; {{ date('Y') }} <a href="https://www.cug.edu.gh/" target="_blank" style="text-decoration: none;">CUG</a></p> --}}
+                        <div class="text-center">
+                            <a href="{{ route('login') }}" 
+                            style="display: inline-block;
+                                   padding: 0.5rem 1rem;
+                                   background-color: #3b82f6;
+                                   color: white;
+                                   text-decoration: none;
+                                   border-radius: 0.375rem;
+                                   box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+                                   transition: background-color 0.15s ease-in-out;">
+                             LOGIN
+                         </a>
+                        </div>
                     </div>
                 </div>
             </div>
