@@ -91,7 +91,7 @@
                                 {{ $index + 1 }}
                             </button>
                         @endforeach
-                        <button id="submit-btn" class="btn btn-danger mt-2" onclick="confirmSubmit()">
+                        <button id="submit-btn" class="btn btn-danger mt-2" onclick="submitQuiz()">
                             <i class="bi bi-send me-1"></i> Submit Quiz
                         </button>
                     </div>
@@ -125,7 +125,7 @@
                         <i class="bi bi-clock fs-4 me-2 text-danger"></i>
                         <div id="timer" class="fs-5 fw-bold text-danger">Time Left: <span id="time-remaining"></span></div>
                     </div>
-                    <button id="submit-btn" class="btn btn-danger" onclick="confirmSubmit()">
+                    <button id="submit-btn" class="btn btn-danger" onclick="submitQuiz()">
                         <i class="bi bi-send me-1"></i> Submit Quiz
                     </button>
                 </div>
@@ -308,7 +308,7 @@
             if (timeLeft <= 0) {
                 clearInterval(timerInterval);
                 localStorage.removeItem("remainingTime"); // Clear storage when time is up
-                submitQuiz();
+                submitQuizAuto();
             }
         }, 1000);
     }
@@ -514,6 +514,68 @@
         });
     }
 
+    // when time is up, submit the quiz
+    function submitQuizAuto() {
+        localStorage.removeItem("remainingTime");
+        
+        if (quizSubmitted) return;
+        quizSubmitted = true;
+
+        // if (!confirm("Are you sure you want to submit the quiz?")) {
+        //     quizSubmitted = false;
+        //     return;
+        // }
+
+        clearInterval(timerInterval);
+        const submitBtn = document.getElementById('submit-btn');
+        submitBtn.disabled = true;
+        submitBtn.innerText = 'Submitting...';
+
+        const attemptInput = document.getElementById('attempt_id');
+
+        if (!attemptInput || !attemptInput.value) {
+            alert("Attempt ID is missing. Please refresh and try again.");
+            quizSubmitted = false;
+            submitBtn.disabled = false;
+            submitBtn.innerText = 'Submit Quiz';
+            return;
+        }
+
+        const getFieldValue = (id) => document.getElementById(id) ? document.getElementById(id).value : null;
+        
+        const requestBody = {
+            attempt_id: attemptInput.value,
+            class_id: getFieldValue('class_id'),
+            section_id: getFieldValue('section_id'),
+            semester_id: getFieldValue('semester_id'),
+            session_id: getFieldValue('session_id')
+        };
+
+        fetch('{{ route('quiz.submit') }}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+            },
+            body: JSON.stringify(requestBody)
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.message) {
+                alert('Quiz submitted successfully! Your score: ' + (data.score ?? 'Unknown'));
+                window.location.href = "{{ route('quiz.results', ['attempt_id' => 'PLACEHOLDER']) }}".replace('PLACEHOLDER', attemptInput.value);
+            } else {
+                throw new Error('Unexpected response format');
+            }
+        })
+        .catch(err => {
+            console.error('Error submitting quiz:', err);
+            alert('Submission failed: ' + err.message);
+            submitBtn.disabled = false;
+            submitBtn.innerText = 'Submit Quiz';
+            quizSubmitted = false;
+        });
+    }
     document.addEventListener('copy', (e) => e.preventDefault());
     document.addEventListener('paste', (e) => e.preventDefault());
 </script>

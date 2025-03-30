@@ -46,7 +46,7 @@
                             </div>
                             <div class="col-sm-8 col-md-9">
                                 <div class="p-3 mb-3 border rounded bg-white">
-                                    <h6>Teacher Information</h6>
+                                    <h6>Lecturer Information</h6>
                                     <table class="table table-responsive mt-3">
                                         <tbody>
                                             <tr>

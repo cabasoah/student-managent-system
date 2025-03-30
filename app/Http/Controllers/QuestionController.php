@@ -143,7 +143,7 @@ class QuestionController extends Controller
             return redirect()->back()->withErrors($validator)->withInput();
         }
 
-        Excel::import(new QuizQuestionsImport($quizId), $request->file('file'));
+        Excel::import(new QuizQuestionsImport($quizId, auth()->id()), $request->file('file'));
 
         return redirect()->route('admin.quizzes.questions', $quizId)
                          ->with('status', 'Questions uploaded successfully!');

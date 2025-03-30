@@ -10,10 +10,12 @@ use Illuminate\Support\Collection;
 class QuizQuestionsImport implements ToCollection
 {
     protected $quizId;
+    protected $teacherId;
 
-    public function __construct($quizId)
+    public function __construct($quizId, $teacherId)
     {
         $this->quizId = $quizId;
+        $this->teacherId = $teacherId;
     }
 
     public function collection(Collection $rows)
@@ -23,12 +25,15 @@ class QuizQuestionsImport implements ToCollection
 
             $question = Question::create([
                 'quiz_id' => $this->quizId,
+                'teacher_id' => $this->teacherId,
                 'question_text' => $row[0],
                 'type' => $row[1],
+                'correct_answer' => $row[2],
+                'max_mark' => $row[3],
             ]);
 
             if (in_array($row[1], ['single_choice', 'multiple_choice'])) {
-                for ($i = 2; $i <= 5; $i++) {
+                for ($i = 4; $i <= 7; $i++) {
                     if (!empty($row[$i])) {
                         Option::create([
                             'question_id' => $question->id,

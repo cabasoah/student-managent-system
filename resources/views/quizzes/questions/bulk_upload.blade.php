@@ -27,6 +27,11 @@
                             <div class="mb-3">
                                 <label for="file" class="form-label">Upload CSV/Excel File</label>
                                 <input type="file" name="file" class="form-control" required>
+                                <small class="form-text text-danger">
+                                    Download the <a href="{{ asset('templates/bulk_question_template.xlsx') }}" class="text-primary" download>
+                                        bulk upload template
+                                    </a> as a guide before uploading.
+                                </small>
                             </div>
                             <button type="submit" class="btn btn-success">
                                 <i class="bi bi-cloud-upload"></i> Upload
