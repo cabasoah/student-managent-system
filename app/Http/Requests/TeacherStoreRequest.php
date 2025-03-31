@@ -3,6 +3,7 @@
 namespace App\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
+use App\Models\LecturerInvite;
 
 class TeacherStoreRequest extends FormRequest
 {
@@ -13,7 +14,31 @@ class TeacherStoreRequest extends FormRequest
      */
     public function authorize()
     {
-        return auth()->user()->can('create users');
+        // Allow authenticated users with permission
+        if (auth()->check()) {
+            return auth()->user()->can('create users');
+        }
+     
+        // For non-authenticated users, validate the invite token
+        return $this->validateInviteToken();
+
+    }
+
+    /**
+     * Validate the invitation token for guest access
+     */
+    protected function validateInviteToken()
+    {
+        $token = $this->input('invite_token') ?? session('lecturer_invite');
+       
+        if (!$token) {
+            return false;
+        }
+    
+        return LecturerInvite::where('token', $token)
+            ->where('used', true)
+            ->where('expires_at', '<=', now())
+            ->exists();
     }
     
     /**
@@ -23,7 +48,7 @@ class TeacherStoreRequest extends FormRequest
      */
     public function rules()
     {
-        return [
+        $rules = [
             'first_name'    => 'required|string',
             'last_name'     => 'required|string',
             'email'         => 'required|string|email|max:255|unique:users',
@@ -31,11 +56,12 @@ class TeacherStoreRequest extends FormRequest
             'nationality'   => 'required|string',
             'phone'         => 'required|string',
             'address'       => 'required|string',
-            'address2'      => 'string',
+            'address2'      => 'nullable|string',
             'city'          => 'required|string',
             'zip'           => 'required|string',
             'photo'         => 'nullable|string',
             'password'      => 'required|string|min:8',
         ];
+        return $rules;
     }
 }

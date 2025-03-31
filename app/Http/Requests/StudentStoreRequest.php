@@ -13,7 +13,14 @@ class StudentStoreRequest extends FormRequest
      */
     public function authorize()
     {
+        // Public registration allowed
+        if (request()->routeIs('student.invite.create')) {
+            return true;
+        }
+
+        // Allow authenticated users with permission
         return auth()->user()->can('create users');
+
     }
 
     /**

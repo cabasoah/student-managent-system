@@ -12,6 +12,7 @@ use App\Repositories\PromotionRepository;
 use App\Http\Requests\StudentStoreRequest;
 use App\Http\Requests\TeacherStoreRequest;
 use App\Interfaces\SchoolSessionInterface;
+use App\Models\LecturerInvite;
 use App\Models\User;
 use App\Repositories\StudentParentInfoRepository;
 use Illuminate\Support\Facades\Storage;
@@ -28,7 +29,9 @@ class UserController extends Controller
     SchoolClassInterface $schoolClassRepository,
     SectionInterface $schoolSectionRepository)
     {
-        $this->middleware(['can:view users']);
+        $this->middleware(['can:view users'])->except([
+            'storeInviteTeacher','storeInviteStudent' // Allow registration without view permission
+        ]);
 
         $this->userRepository = $userRepository;
         $this->schoolSessionRepository = $schoolSessionRepository;
@@ -48,6 +51,28 @@ class UserController extends Controller
             $this->userRepository->createTeacher($request->validated());
 
             return back()->with('status', 'Teacher creation was successful!');
+        } catch (\Exception $e) {
+            return back()->withError($e->getMessage());
+        }
+    }
+
+    public function storeInviteTeacher(TeacherStoreRequest $request)
+    {
+        $inviteToken = session()->pull('lecturer_invite');
+    
+        $invite = LecturerInvite::where('token', $inviteToken)
+            ->where('used', true)
+            ->where('expires_at', '<=', now())
+            ->first();
+    
+        if (!$invite) {
+            abort(403, 'Invalid invitation token');
+        }
+        
+        try {
+            $this->userRepository->createTeacher($request->validated());
+
+            return redirect()->route('success');
         } catch (\Exception $e) {
             return back()->withError($e->getMessage());
         }
@@ -126,6 +151,17 @@ class UserController extends Controller
             $this->userRepository->createStudent($request->validated());
 
             return back()->with('status', 'Student creation was successful!');
+        } catch (\Exception $e) {
+            return back()->withError($e->getMessage());
+        }
+    }
+
+    public function storeInviteStudent(StudentStoreRequest $request)
+    {
+        try {
+            $this->userRepository->createStudent($request->validated());
+
+            return redirect()->route('success');
         } catch (\Exception $e) {
             return back()->withError($e->getMessage());
         }

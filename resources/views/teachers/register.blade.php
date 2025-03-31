@@ -2,26 +2,22 @@
 
 @section('content')
 <div class="container">
-    <div class="row justify-content-start">
-        @include('layouts.left-menu')
-        <div class="col-xs-11 col-sm-11 col-md-11 col-lg-10 col-xl-10 col-xxl-10">
+    <div class="row justify-content-center">
+        <div class="col-xs-11 col-sm-11 col-md-11 col-lg-11 col-xl-11 col-xxl-11">
             <div class="row pt-2">
                 <div class="col ps-4">
                     <h1 class="display-6 mb-3">
-                        <i class="bi bi-person-lines-fill"></i> Add Lecturer
+                        <i class="bi bi-person-lines-fill"></i> Register as Lecturer
                     </h1>
-                    <nav aria-label="breadcrumb">
-                        <ol class="breadcrumb">
-                            <li class="breadcrumb-item"><a href="{{route('home')}}">Home</a></li>
-                            <li class="breadcrumb-item active" aria-current="page">Add Lecturer</li>
-                        </ol>
-                    </nav>
 
                     @include('session-messages')
 
                     <div class="mb-4">
-                        <form class="row g-3" action="{{route('school.teacher.create')}}" method="POST">
+                        <form class="row g-3" action="{{route('invite.teacher.create')}}" method="POST">
                             @csrf
+                            @unless(auth()->check())
+                                <input type="hidden" name="invite_token" value="{{ $invite_token }}">
+                            @endunless
                             <div class="col-md-3">
                                 <label for="inputFirstName" class="form-label">First Name<sup><i class="bi bi-asterisk text-primary"></i></sup></label>
                                 <input type="text" class="form-control" id="inputFirstName" name="first_name" placeholder="First Name" required value="{{old('first_name')}}">
@@ -76,7 +72,7 @@
                                 <input type="text" class="form-control" id="inputNationality" name="nationality" placeholder="e.g. Ghana, German, ..." required value="{{old('nationality')}}">
                             </div>
                             <div class="col-12">
-                                <button type="submit" class="btn btn-sm btn-outline-primary"><i class="bi bi-person-plus"></i> Add</button>
+                                <button type="submit" class="btn btn-sm btn-outline-primary"><i class="bi bi-person-plus"></i> Register</button>
                             </div>
                         </form>
                     </div>

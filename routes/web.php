@@ -33,6 +33,9 @@ use App\Exports\QuizzesExport;
 use Maatwebsite\Excel\Facades\Excel;
 use App\Interfaces\SchoolSessionInterface;
 use App\Exports\StudentResultsExport;
+use App\Http\Controllers\InvitationController;
+use App\Http\Controllers\LecturerInviteController;
+use App\Http\Requests\TeacherStoreRequest;
 
 /*
 |--------------------------------------------------------------------------
@@ -51,7 +54,31 @@ Route::get('/', function () {
 
 Auth::routes();
 
+// Public routes for lecturer invites
+Route::get('/invite/{invite}', [LecturerInviteController::class, 'redeem'])->name('lecturer.invite')->withoutMiddleware(['auth', 'verified']);
+Route::get('/lecturer/register', [LecturerInviteController::class, 'registerForm'])->name('teachers.register');
+Route::post('/invite/teacher/create', [UserController::class, 'storeInviteTeacher'])->name('invite.teacher.create');
+Route::get('/register/success', function () {
+    return view('auth.success');
+})->name('success');
+
+// Public routes for student invites
+Route::get('/register/{token}', [InvitationController::class, 'createFromInvite'])->name('register.invited')->middleware('signed');
+
+// Public routes for student academics 
+Route::get('/student/invite/section', [SectionController::class, 'getSection'])->name('invite.sections');
+Route::post('student/invite/create', [UserController::class, 'storeInviteStudent'])->name('student.invite.create');
+
 Route::middleware(['auth'])->group(function () {
+    
+    // Admin Invite routes
+    Route::post('/generate-invite', [LecturerInviteController::class, 'generate'])->name('invite.generate');
+    Route::get('/lecturer/invite', [LecturerInviteController::class, 'inviteForm'])->name('teachers.invite');
+
+    // Lecturer Invite routes
+    Route::get('/invitations', [InvitationController::class, 'index'])->name('invitations.index');
+    Route::get('/invitations/create', [InvitationController::class, 'create'])->name('invitations.create');
+    Route::post('/invitations', [InvitationController::class, 'generate'])->name('invitations.store');
 
     Route::prefix('school')->name('school.')->group(function () {
         Route::post('session/create', [SchoolSessionController::class, 'store'])->name('session.store');

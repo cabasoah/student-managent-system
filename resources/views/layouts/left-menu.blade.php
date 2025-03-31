@@ -107,7 +107,7 @@
                             {{-- <li class="nav-item w-100" {{ request()->routeIs('exam.grade.system.index')? 'style="font-weight:bold;"' : '' }}><a class="nav-link" href="{{route('exam.grade.system.index')}}"><i class="bi bi-file-ruled me-2"></i> View Grade Systems</a></li> --}}
                         </ul>
                     </li>
-                    {{-- <li class="nav-item border-bottom">
+                        {{-- <li class="nav-item border-bottom">
                         <a type="button" href="#" class="d-flex nav-link {{ request()->is('marks*')? 'active' : '' }} dropdown-toggle caret-off" data-bs-toggle="dropdown" aria-expanded="false"><i class="bi bi-cloud-sun"></i> <span class="ms-2 d-inline d-sm-none d-md-none d-xl-inline">Marks / Results</span>
                             <i class="ms-auto d-inline d-sm-none d-md-none d-xl-inline bi bi-chevron-down"></i>
                         </a>
@@ -116,6 +116,17 @@
                             <li><a class="dropdown-item" href="{{url('marks/results')}}">View Results</a></li>
                         </ul>
                     </li> --}}
+                    @endif
+                    @if (Auth::user()->role == "teacher")
+                        <li class="nav-item border-bottom">
+                            <a type="button" href="#" class="d-flex nav-link {{ request()->is('invitations*')? 'active' : '' }} dropdown-toggle caret-off" data-bs-toggle="dropdown" aria-expanded="false"><i class="bi bi-person-plus"></i> <span class="ms-2 d-inline d-sm-none d-md-none d-xl-inline">Invitations</span>
+                                <i class="ms-auto d-inline d-sm-none d-md-none d-xl-inline bi bi-chevron-down"></i>
+                            </a>
+                            <ul class="dropdown-menu dropdown-menu-end">
+                                <li><a class="dropdown-item" href="{{url('/invitations')}}">View Invitations</a></li>
+                                <li><a class="dropdown-item" href="{{url('/invitations/create')}}">Generate Invitations</a></li>
+                            </ul>
+                        </li>
                     @endif
                     @if (Auth::user()->role == "admin")
                     <li class="nav-item">
@@ -134,6 +145,9 @@
                     @if (Auth::user()->role == "admin")
                     <li class="nav-item">
                         <a class="nav-link {{ request()->is('academics*')? 'active' : '' }}" href="{{url('academics/settings')}}"><i class="bi bi-tools"></i> <span class="ms-1 d-inline d-sm-none d-md-none d-xl-inline">Academic</span></a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link {{ request()->is('/lecturer/invite*')? 'active' : '' }}" href="{{url('/lecturer/invite')}}"><i class="bi bi-person-plus"></i> <span class="ms-1 d-inline d-sm-none d-md-none d-xl-inline">Lecturer Invite</span></a>
                     </li>
                     @endif
                     @if (!session()->has('browse_session_id') && Auth::user()->role == "admin")
