@@ -30,7 +30,7 @@
                                     @foreach ($invitations as $invitation)
                                         <tr>
                                             <td>{{$invitation->id}}</td>
-                                            <td>{{$invitation->used}}</td>
+                                            <td>{{$invitation->used ? "Used":"Unused"}}</td>
                                             <td>{{$invitation->expires_at}}</td>
                                         </tr>
                                     @endforeach

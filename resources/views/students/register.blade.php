@@ -102,7 +102,7 @@
                                     <input type="text" class="form-control" id="inputPhone" name="phone" placeholder="+233 01......" required value="{{old('phone')}}">
                                 </div>
                                 <div class="col-5-md">
-                                    <label for="inputIdCardNumber" class="form-label">Id Card Number<sup><i class="bi bi-asterisk text-primary"></i></sup></label>
+                                    <label for="inputIdCardNumber" class="form-label">Index Number<sup><i class="bi bi-asterisk text-primary"></i></sup></label>
                                     <input type="text" class="form-control" id="inputIdCardNumber" name="id_card_number" placeholder="e.g. UGR0201610000 (Index Number)" required value="{{old('id_card_number')}}">
                                 </div>
                             </div>

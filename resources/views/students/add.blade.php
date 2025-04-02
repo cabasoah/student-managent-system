@@ -62,7 +62,7 @@
                                 </div>
                                 <div class="col-md-3">
                                     <label for="inputCity" class="form-label">City<sup><i class="bi bi-asterisk text-primary"></i></sup></label>
-                                    <input type="text" class="form-control" id="inputCity" name="city" placeholder="Dhaka..." required value="{{old('city')}}">
+                                    <input type="text" class="form-control" id="inputCity" name="city" placeholder="Accra..." required value="{{old('city')}}">
                                 </div>
                                 <div class="col-md-3">
                                     <label for="inputZip" class="form-label">Zip<sup><i class="bi bi-asterisk text-primary"></i></sup></label>
@@ -77,7 +77,7 @@
                                 </div>
                                 <div class="col-md-3">
                                     <label for="inputNationality" class="form-label">Nationality<sup><i class="bi bi-asterisk text-primary"></i></sup></label>
-                                    <input type="text" class="form-control" id="inputNationality" name="nationality" placeholder="e.g. Bangladeshi, German, ..." required value="{{old('nationality')}}">
+                                    <input type="text" class="form-control" id="inputNationality" name="nationality" placeholder="e.g. Ghanaian, German, ..." required value="{{old('nationality')}}">
                                 </div>
                                 <div class="col-md-4">
                                     <label for="inputBloodType" class="form-label">BloodType<sup><i class="bi bi-asterisk text-primary"></i></sup></label>
@@ -106,11 +106,11 @@
                                 </div>
                                 <div class="col-md-4">
                                     <label for="inputPhone" class="form-label">Phone<sup><i class="bi bi-asterisk text-primary"></i></sup></label>
-                                    <input type="text" class="form-control" id="inputPhone" name="phone" placeholder="+880 01......" required value="{{old('phone')}}">
+                                    <input type="text" class="form-control" id="inputPhone" name="phone" placeholder="+233 01......" required value="{{old('phone')}}">
                                 </div>
                                 <div class="col-5-md">
-                                    <label for="inputIdCardNumber" class="form-label">Id Card Number<sup><i class="bi bi-asterisk text-primary"></i></sup></label>
-                                    <input type="text" class="form-control" id="inputIdCardNumber" name="id_card_number" placeholder="e.g. 2021-03-01-02-01 (Year Semester Class Section Roll)" required value="{{old('id_card_number')}}">
+                                    <label for="inputIdCardNumber" class="form-label">Index Number<sup><i class="bi bi-asterisk text-primary"></i></sup></label>
+                                    <input type="text" class="form-control" id="inputIdCardNumber" name="id_card_number" placeholder="e.g. UGR020171011 (Your Index Number)" required value="{{old('id_card_number')}}">
                                 </div>
                             </div>
                             <div class="row mt-4 g-3">
@@ -121,7 +121,7 @@
                                 </div>
                                 <div class="col-md-3">
                                     <label for="inputFatherPhone" class="form-label">Father's Phone<sup><i class="bi bi-asterisk text-primary"></i></sup></label>
-                                    <input type="text" class="form-control" id="inputFatherPhone" name="father_phone" placeholder="+880 01......" required value="{{old('father_phone')}}">
+                                    <input type="text" class="form-control" id="inputFatherPhone" name="father_phone" placeholder="+233 01......" required value="{{old('father_phone')}}">
                                 </div>
                                 <div class="col-md-3">
                                     <label for="inputMotherName" class="form-label">Mother Name<sup><i class="bi bi-asterisk text-primary"></i></sup></label>
@@ -129,7 +129,7 @@
                                 </div>
                                 <div class="col-md-3">
                                     <label for="inputMotherPhone" class="form-label">Mother's Phone<sup><i class="bi bi-asterisk text-primary"></i></sup></label>
-                                    <input type="text" class="form-control" id="inputMotherPhone" name="mother_phone" placeholder="+880 01......" required value="{{old('mother_name')}}">
+                                    <input type="text" class="form-control" id="inputMotherPhone" name="mother_phone" placeholder="+233 01......" required value="{{old('mother_name')}}">
                                 </div>
                                 <div class="col-4-md">
                                     <label for="inputParentAddress" class="form-label">Address<sup><i class="bi bi-asterisk text-primary"></i></sup></label>
