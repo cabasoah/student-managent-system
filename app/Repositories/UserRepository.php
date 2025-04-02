@@ -56,7 +56,7 @@ class UserRepository implements UserInterface {
                 'create exams', 'view exams', 'create exams rule', 'view exams rule',
                 'edit exams rule', 'delete exams rule', 'take attendances', 'view attendances',
                 'create assignments', 'view assignments', 'save marks', 'view users',
-                'view routines', 'view syllabi', 'view events', 'view notices','create users'
+                'view routines', 'view syllabi', 'view events', 'view notices','create users','edit users','delete users'
             ];
             $user->givePermissionTo($permissions);
         });

@@ -62,7 +62,7 @@ class UserController extends Controller
     
         $invite = LecturerInvite::where('token', $inviteToken)
             ->where('used', true)
-            ->where('expires_at', '<=', now())
+            ->where('expires_at', '>=', now())
             ->first();
     
         if (!$invite) {

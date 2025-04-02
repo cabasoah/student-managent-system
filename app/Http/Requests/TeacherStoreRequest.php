@@ -37,7 +37,7 @@ class TeacherStoreRequest extends FormRequest
     
         return LecturerInvite::where('token', $token)
             ->where('used', true)
-            ->where('expires_at', '<=', now())
+            ->where('expires_at', '>=', now())
             ->exists();
     }
     
