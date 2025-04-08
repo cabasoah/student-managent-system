@@ -14,6 +14,9 @@ use App\Traits\SchoolSession;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Http;
+use Barryvdh\DomPDF\Facade\Pdf;
+use Illuminate\Support\Str;
+
 class StudentQuizController extends Controller
 {
     use SchoolSession;
@@ -84,7 +87,10 @@ class StudentQuizController extends Controller
     public function attemptQuiz($quiz_id)
     {
         $student_id = Auth::user()->id;
-        $quiz = Quiz::with('questions.options')->findOrFail($quiz_id);
+        $quiz = Quiz::with(['questions' => function($query) {
+            $query->inRandomOrder()->with('options');
+        }])->findOrFail($quiz_id);
+        
 
         $attempt = StudentQuizAttempt::firstOrCreate(
             [
@@ -450,6 +456,135 @@ class StudentQuizController extends Controller
             'correctAnswers' => $correctAnswers,
             'questionsWithAnswers' => $questionsWithAnswers
         ]);
+    }
+
+    public function showQuizes($id)
+    {
+        $quizAttempts = StudentQuizAttempt::where('student_id', $id)
+            ->with(['quiz.questions'])
+            ->get();
+
+        $quizSummaries = [];
+
+        foreach ($quizAttempts as $attempt) {
+            $totalMarks = 0;
+
+            foreach ($attempt->quiz->questions as $question) {
+                if (in_array($question->type, ['single_choice', 'multiple_choice'])) {
+                    $totalMarks += 1;
+                } elseif ($question->type === 'open_ended') {
+                    $totalMarks += $question->max_mark ?? 1;
+                }
+            }
+
+            $quizSummaries[] = [
+                'attempt_id' => $attempt->id,
+                'quiz_title' => $attempt->quiz->title,
+                'total_marks' => $totalMarks,
+                'score' => $attempt->score,
+                'date_taken' => $attempt->created_at->format('d M Y'),
+            ];
+        }
+
+        return view('students.quizzes', compact('quizSummaries'));
+    }
+
+    public function preview(StudentQuizAttempt $quizAttempt)
+    {
+        $attempt = $quizAttempt->load(['quiz.questions.options', 'answers']);
+        return view('students.quizzes.preview', compact('attempt'));
+    }
+
+    public function downloadPdf(StudentQuizAttempt $quizAttempt)
+    {
+        $attempt = StudentQuizAttempt::with(['quiz.questions.options', 'answers.option'])->find($quizAttempt->id);
+       
+        if (!$attempt) {
+            return redirect()->route('home')->with('error', 'Quiz attempt not found.');
+        }
+
+        $totalMarks = 0;
+        $earnedMarks = 0;
+        $correctAnswers = 0;
+
+        $questionsWithAnswers = [];
+
+        foreach ($attempt->quiz->questions as $question) {
+            $studentAnswers = $attempt->answers->where('question_id', $question->id);
+        
+            $studentResponseText = null;
+            $correctResponseText = null;
+            $isCorrect = false;
+            $awardedMark = 0;
+        
+            if ($question->type === 'multiple_choice') {
+                $correctOptions = $question->options->where('is_correct', true)->pluck('id')->toArray();
+                $studentSelectedOptions = $studentAnswers->pluck('option_id')->toArray();
+        
+                // Get text of student-selected options
+                $selectedTexts = $question->options->whereIn('id', $studentSelectedOptions)->pluck('option_text')->toArray();
+                $studentResponseText = !empty($selectedTexts) ? implode(', ', $selectedTexts) : 'No Answer';
+        
+                // Get correct option texts
+                $correctResponseText = $question->options->where('is_correct', true)->pluck('option_text')->join(', ') ?? 'N/A';
+        
+                if (count(array_diff($studentSelectedOptions, $correctOptions)) === 0 &&
+                    count(array_diff($correctOptions, $studentSelectedOptions)) === 0) {
+                    $correctAnswers++;
+                    $earnedMarks += 1;
+                    $isCorrect = true;
+                }
+        
+                $totalMarks += 1;
+            } elseif ($question->type === 'single_choice') {
+                $answer = $studentAnswers->first();
+        
+                $studentResponseText = $answer && $answer->option ? $answer->option->option_text : 'No Answer';
+                $correctResponseText = $question->options->where('is_correct', true)->pluck('option_text')->join(', ') ?? 'N/A';
+        
+                if ($answer && $answer->option_id && $question->options->where('is_correct', true)->pluck('id')->contains($answer->option_id)) {
+                    $correctAnswers++;
+                    $earnedMarks += 1;
+                    $isCorrect = true;
+                }
+        
+                $totalMarks += 1;
+            } elseif ($question->type === 'open_ended' && $studentAnswers->first()) {
+                $maxMark = $question->max_mark ?? 1;
+                $awardedMark = $studentAnswers->first()->marks_awarded ?? 0;
+        
+                $correctAnswer = strtolower(trim($question->correct_answer));
+                $studentResponse = strtolower(trim($studentAnswers->first()->answer_text));
+        
+                $studentResponseText = $studentAnswers->first()->answer_text;
+                $correctResponseText = $question->correct_answer;
+        
+                $earnedMarks += $awardedMark;
+                if ($awardedMark >= $maxMark) {
+                    $correctAnswers++;
+                    $isCorrect = true;
+                }
+        
+                $totalMarks += $maxMark;
+            }
+        
+            $questionsWithAnswers[] = [
+                'question' => $question->question_text,
+                'questionType' => $question->type,
+                'studentAnswer' => $studentResponseText ?? 'No Answer',
+                'correctAnswer' => $correctResponseText ?? 'N/A',
+                'isCorrect' => $isCorrect,
+                'awardedMark' => $awardedMark,
+                'maxMark' => $question->max_mark ?? 1,
+            ];
+        }
+        
+
+        $score = ($totalMarks > 0) ? round(($earnedMarks / $totalMarks) * 100, 2) : 0;
+        $studentName = $attempt->student->first_name . ' ' . $attempt->student->last_name; 
+        $pdfName = Str::slug($studentName . ' - ' . $attempt->quiz->title) . '.pdf';
+        $pdf = Pdf::loadView('students.quizzes_pdf', compact('attempt', 'questionsWithAnswers', 'score','earnedMarks','totalMarks','correctAnswers','studentName'));
+        return $pdf->download($pdfName);
     }
 
 }

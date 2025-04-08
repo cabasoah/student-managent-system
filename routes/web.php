@@ -185,6 +185,12 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/{quiz}/questions', [QuestionController::class, 'index'])->name('quizzes.questions');
         Route::get('questions/{quiz}/bulk-upload', [QuestionController::class, 'showBulkUploadForm'])->name('questions.bulk-upload-form');
         Route::post('quizzes/{quiz}/questions/bulk-upload', [QuestionController::class, 'bulkUpload'])->name('questions.bulk-upload');
+
+        //view students quizes and download
+        Route::get('/student/{id}/quizzes', [StudentQuizController::class, 'showQuizes'])->name('student.quizzes.index');
+        Route::get('/student/quiz/{quizAttempt}/preview', [StudentQuizController::class, 'preview'])->name('student.quiz.preview');
+        Route::get('/student/quiz/{quizAttempt}/download', [StudentQuizController::class, 'downloadPdf'])->name('student.quiz.download');
+
     });
     Route::get('/admin/quizzes/{quiz}/results', [QuizController::class, 'showResults'])->name('admin.quizzes.results');
     Route::get('/admin/quiz/{quizId}/export', function ($quizId) {
