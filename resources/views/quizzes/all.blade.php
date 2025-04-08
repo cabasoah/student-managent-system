@@ -58,6 +58,7 @@
                                         <th scope="col">Course</th>
                                         <th scope="col">Created at</th>
                                         <th scope="col">Visibility</th>
+                                        <th scope="col">Reset Quiz</th>
                                         <th scope="col">Actions</th>
                                     </tr>
                                 </thead>
@@ -74,10 +75,20 @@
                                                 </button>
                                             </td>
                                             <td>
+                                                <form action="{{ route('quiz.resetAll', $quiz->id) }}" method="POST" onsubmit="return confirm('Are you sure you want to reset this quiz for ALL students?')">
+                                                    @csrf
+                                                    @method('DELETE')
+                                                    <button type="submit" class="btn btn-sm btn-danger">
+                                                        <i class="bi bi-arrow-counterclockwise"></i> Reset 
+                                                    </button>
+                                                </form>
+                                            </td>
+                                            <td>
                                                 <div class="btn-group" role="group">
-                                                    <a href="{{ route('admin.quizzes.edit', $quiz->id) }}" class="btn btn-sm btn-outline-primary"><i class="bi bi-pen"></i> Edit</a>
-                                                    <a href="{{ route('admin.quizzes.questions', $quiz->id) }}" class="btn btn-sm btn-outline-primary"><i class="bi bi-eye"></i> Manage Questions</a>
-                                                    <a href="{{ route('admin.quizzes.results', $quiz->id) }}" class="btn btn-sm btn-outline-info"><i class="bi bi-people"></i> Student Results</a>
+                                                    <a href="{{ route('admin.quizzes.edit', $quiz->id) }}" class="btn btn-sm btn-outline-primary"><i class="bi bi-pen"></i> Edit</a> &nbsp;
+                                                    <a href="{{ route('admin.quizzes.questions', $quiz->id) }}" class="btn btn-sm btn-outline-primary"><i class="bi bi-eye"></i> Manage Questions</a> &nbsp;
+                                                    <a href="{{ route('admin.quizzes.results', $quiz->id) }}" class="btn btn-sm btn-outline-info"><i class="bi bi-people"></i> Student Results</a> &nbsp;
+                                                 
                                                     <form action="{{ route('admin.quizzes.destroy', $quiz->id) }}" method="POST" class="d-inline">
                                                         @csrf @method('DELETE')
                                                         <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('Delete this quiz?');"><i class="bi bi-trash"></i> Delete</button>

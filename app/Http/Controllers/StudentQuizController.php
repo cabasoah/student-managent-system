@@ -109,7 +109,9 @@ class StudentQuizController extends Controller
             'attempt_id' => 'required|exists:student_quiz_attempts,id',
             'question_id' => 'required|exists:questions,id',
             'answer' => 'nullable|string',
-            'option_id' => 'nullable|exists:options,id',
+            'option_id' => 'nullable|exists:options,id', // For single_choice
+            'option_ids' => 'nullable|array', // For multiple_choice
+            'option_ids.*' => 'exists:options,id',
             'class_id' => 'nullable|integer|exists:school_classes,id',
             'section_id' => 'nullable|integer|exists:sections,id',
             'semester_id' => 'nullable|integer|exists:semesters,id',
@@ -131,20 +133,45 @@ class StudentQuizController extends Controller
     
         $question = Question::findOrFail($request->question_id);
     
-        StudentAnswer::updateOrCreate(
-            [
-                'attempt_id' => $request->attempt_id,
-                'question_id' => $request->question_id,
-            ],
-            [
-                'option_id' => $question->type === 'open_ended' ? null : $request->option_id,
-                'answer_text' =>  $request->answer,
-                'class_id' => $request->class_id ?? $attempt->class_id,
-                'section_id' => $request->section_id ?? $attempt->section_id,
-                'semester_id' => $request->semester_id ?? $attempt->semester_id,
-                'session_id' => $request->session_id ?? $attempt->session_id,
-            ]
-        );
+        // Handle multiple choice separately
+        if ($question->type === 'multiple_choice') {
+            // Delete old answers for this question
+            StudentAnswer::where('attempt_id', $attempt->id)
+                ->where('question_id', $question->id)
+                ->delete();
+    
+            if (!empty($request->option_ids) && is_array($request->option_ids)) {
+                foreach ($request->option_ids as $optionId) {
+                    StudentAnswer::create([
+                        'attempt_id' => $attempt->id,
+                        'question_id' => $question->id,
+                        'option_id' => $optionId,
+                        'answer_text' => null,
+                        'class_id' => $request->class_id ?? $attempt->class_id,
+                        'section_id' => $request->section_id ?? $attempt->section_id,
+                        'semester_id' => $request->semester_id ?? $attempt->semester_id,
+                        'session_id' => $request->session_id ?? $attempt->session_id,
+                    ]);
+                }
+            }
+    
+        } else {
+            // Handle single_choice and open_ended
+            StudentAnswer::updateOrCreate(
+                [
+                    'attempt_id' => $request->attempt_id,
+                    'question_id' => $request->question_id,
+                ],
+                [
+                    'option_id' => $question->type === 'open_ended' ? null : $request->option_id,
+                    'answer_text' => $request->answer,
+                    'class_id' => $request->class_id ?? $attempt->class_id,
+                    'section_id' => $request->section_id ?? $attempt->section_id,
+                    'semester_id' => $request->semester_id ?? $attempt->semester_id,
+                    'session_id' => $request->session_id ?? $attempt->session_id,
+                ]
+            );
+        }
     
         return response()->json(['success' => true, 'message' => 'Answer saved successfully']);
     }
@@ -183,30 +210,40 @@ class StudentQuizController extends Controller
         $score = 0;
     
         // Fetch all student answers once
-        $studentAnswers = $attempt->answers()->get()->keyBy('question_id');
-    
+        // $studentAnswers = $attempt->answers()->get()->keyBy('question_id');
+        $studentAnswers = $attempt->answers()->get();
         foreach ($quiz->questions as $question) {
-            $studentAnswer = $studentAnswers->get($question->id);
-    
-            if ($studentAnswer) {
-                if ($question->type == 'single_choice' || $question->type == 'multiple_choice') {
-                    $correctOptions = $question->options->where('is_correct', true)->pluck('id')->toArray();
-                    $selectedOptions = is_array($studentAnswer->option_id) ? $studentAnswer->option_id : [$studentAnswer->option_id];
-    
-                    if ($question->type == 'multiple_choice') {
-                        $selectedOptions = $studentAnswers->where('question_id', $question->id)->pluck('option_id')->toArray();
-                    }
-    
-                    if ($selectedOptions == $correctOptions) {
-                        $score += 1;
-                    }
-                } elseif ($question->type == 'open_ended' && !empty($question->correct_answer)) {
+            if ($question->type == 'multiple_choice') {
+                $selectedOptions = $studentAnswers
+                    ->where('question_id', $question->id)
+                    ->pluck('option_id')
+                    ->sort()
+                    ->values()
+                    ->toArray();
+        
+                $correctOptions = collect($question->options)
+                    ->where('is_correct', true)
+                    ->pluck('id')
+                    ->sort()
+                    ->values()
+                    ->toArray();
+        
+                if ($selectedOptions === $correctOptions) {
+                    $score += 1;
+                }
+            } elseif ($question->type == 'single_choice') {
+                $studentAnswer = $studentAnswers->firstWhere('question_id', $question->id);
+                if ($studentAnswer && $question->options->where('id', $studentAnswer->option_id)->first()?->is_correct) {
+                    $score += 1;
+                }
+            } elseif ($question->type == 'open_ended' && !empty($question->correct_answer)) {
+                $studentAnswer = $studentAnswers->firstWhere('question_id', $question->id);
+                if ($studentAnswer) {
                     $studentText = strtolower(trim($studentAnswer->answer_text));
                     $correctText = strtolower(trim($question->correct_answer));
-    
-                    // Faster alternative to levenshtein
+        
                     similar_text($studentText, $correctText, $similarityPercentage);
-    
+        
                     $marksAwarded = 0;
                     if ($similarityPercentage >= 90) {
                         $marksAwarded = $question->max_mark;
@@ -219,16 +256,59 @@ class StudentQuizController extends Controller
                     } elseif ($similarityPercentage >= 10) {
                         $marksAwarded = $question->max_mark * 0.1;
                     }
-
-                    //Store the awarded marks in `student_answers`
+        
                     $studentAnswer->update(['marks_awarded' => $marksAwarded]);
-
+        
                     $score += $marksAwarded;
-    
-                    
                 }
             }
         }
+        
+    
+        // foreach ($quiz->questions as $question) {
+        //     $studentAnswer = $studentAnswers->get($question->id);
+    
+        //     if ($studentAnswer) {
+        //         if ($question->type == 'single_choice' || $question->type == 'multiple_choice') {
+        //             $correctOptions = $question->options->where('is_correct', true)->pluck('id')->toArray();
+        //             $selectedOptions = is_array($studentAnswer->option_id) ? $studentAnswer->option_id : [$studentAnswer->option_id];
+    
+        //             if ($question->type == 'multiple_choice') {
+        //                 $selectedOptions = $studentAnswers->where('question_id', $question->id)->pluck('option_id')->toArray();
+        //             }
+    
+        //             if ($selectedOptions == $correctOptions) {
+        //                 $score += 1;
+        //             }
+        //         } elseif ($question->type == 'open_ended' && !empty($question->correct_answer)) {
+        //             $studentText = strtolower(trim($studentAnswer->answer_text));
+        //             $correctText = strtolower(trim($question->correct_answer));
+    
+        //             // Faster alternative to levenshtein
+        //             similar_text($studentText, $correctText, $similarityPercentage);
+    
+        //             $marksAwarded = 0;
+        //             if ($similarityPercentage >= 90) {
+        //                 $marksAwarded = $question->max_mark;
+        //             } elseif ($similarityPercentage >= 70) {
+        //                 $marksAwarded = $question->max_mark * 0.75;
+        //             } elseif ($similarityPercentage >= 50) {
+        //                 $marksAwarded = $question->max_mark * 0.5;
+        //             } elseif ($similarityPercentage >= 25) {
+        //                 $marksAwarded = $question->max_mark * 0.25;
+        //             } elseif ($similarityPercentage >= 10) {
+        //                 $marksAwarded = $question->max_mark * 0.1;
+        //             }
+
+        //             //Store the awarded marks in `student_answers`
+        //             $studentAnswer->update(['marks_awarded' => $marksAwarded]);
+
+        //             $score += $marksAwarded;
+    
+                    
+        //         }
+        //     }
+        // }
     
         // Save the total score
         $attempt->update([
@@ -245,219 +325,6 @@ class StudentQuizController extends Controller
         ]);
     }
     
-    
-
-
-    // public function submitQuiz(Request $request)
-    // {
-    //     $request->validate([
-    //         'attempt_id' => 'required|exists:student_quiz_attempts,id',
-    //         'class_id' => 'nullable|integer|exists:school_classes,id',
-    //         'section_id' => 'nullable|integer|exists:sections,id',
-    //         'semester_id' => 'nullable|integer|exists:semesters,id',
-    //         'session_id' => 'nullable|integer|exists:school_sessions,id',
-    //     ]);
-
-    //     $attempt = StudentQuizAttempt::findOrFail($request->attempt_id);
-
-    //     $quiz = $attempt->quiz()->with([
-    //         'questions' => function ($query) {
-    //             $query->select('id', 'quiz_id', 'type', 'correct_answer', 'max_mark');
-    //         },
-    //         'questions.options' => function ($query) {
-    //             $query->select('id', 'question_id', 'is_correct');
-    //         }
-    //     ])->first();
-
-    //     if (!$quiz) {
-    //         return response()->json(['message' => 'Quiz not found'], 404);
-    //     }
-
-    //     if ($attempt->student_id !== auth()->id()) {
-    //         return response()->json(['message' => 'Unauthorized submission'], 403);
-    //     }
-
-    //     $score = 0;
-    //     $studentAnswers = $attempt->answers()->get();
-
-    //     foreach ($quiz->questions as $question) {
-    //         $studentAnswer = $studentAnswers->where('question_id', $question->id)->first();
-
-    //         if ($studentAnswer) {
-    //             if ($question->type == 'single_choice' || $question->type == 'multiple_choice') {
-    //                 $correctOptions = $question->options->where('is_correct', true)->pluck('id')->toArray();
-    //                 $selectedOptions = is_array($studentAnswer->option_id) ? $studentAnswer->option_id : [$studentAnswer->option_id];
-
-    //                 if ($question->type == 'multiple_choice') {
-    //                     $selectedOptions = $attempt->answers()
-    //                         ->where('question_id', $question->id)
-    //                         ->pluck('option_id')
-    //                         ->toArray();
-    //                 }
-
-    //                 if ($selectedOptions == $correctOptions) {
-    //                     $score += 1;
-    //                 }
-    //             } elseif ($question->type == 'open_ended' && !empty($question->correct_answer)) {
-    //                 $studentText = strtolower(trim($studentAnswer->option_id)); 
-    //                 $correctText = strtolower(trim($question->correct_answer));
-
-    //                 $levenshteinDistance = levenshtein($studentText, $correctText);
-    //                 $maxLength = max(strlen($studentText), strlen($correctText));
-
-    //                 $similarityPercentage = ($maxLength > 0) ? (1 - ($levenshteinDistance / $maxLength)) * 100 : 0;
-
-    //                 if ($similarityPercentage < 90) {
-    //                     $synonymMatch = $this->checkSynonyms($studentText, $correctText);
-    //                     if ($synonymMatch) {
-    //                         $similarityPercentage += 15;
-    //                     }
-    //                 }
-
-    //                 $marksAwarded = 0;
-    //                 if ($similarityPercentage >= 90) {
-    //                     $marksAwarded = $question->max_mark;
-    //                 } elseif ($similarityPercentage >= 70) {
-    //                     $marksAwarded = $question->max_mark * 0.75;
-    //                 } elseif ($similarityPercentage >= 50) {
-    //                     $marksAwarded = $question->max_mark * 0.5;
-    //                 } elseif ($similarityPercentage >= 25) {
-    //                     $marksAwarded = $question->max_mark * 0.25;
-    //                 } elseif ($similarityPercentage >= 10) {
-    //                     $marksAwarded = $question->max_mark * 0.1;
-    //                 }
-
-    //                 $score += $marksAwarded;
-
-    //                 //Store the awarded marks in `student_answers`
-    //                 $studentAnswer->update(['marks_awarded' => $marksAwarded]);
-    //             }
-    //         }
-    //     }
-
-    //     $attempt->update([
-    //         'score' => $score,
-    //         'class_id' => $request->class_id ?? $attempt->class_id,
-    //         'section_id' => $request->section_id ?? $attempt->section_id,
-    //         'semester_id' => $request->semester_id ?? $attempt->semester_id,
-    //         'session_id' => $request->session_id ?? $attempt->session_id,
-    //     ]);
-
-    //     return response()->json([
-    //         'message' => 'Quiz submitted successfully',
-    //         'score' => $score,
-    //         'questions' => $quiz->questions
-    //     ]);
-    // }
-
-
-    // public function submitQuiz(Request $request)
-    // {
-    //     $request->validate([
-    //         'attempt_id' => 'required|exists:student_quiz_attempts,id',
-    //         'class_id' => 'nullable|integer|exists:school_classes,id',
-    //         'section_id' => 'nullable|integer|exists:sections,id',
-    //         'semester_id' => 'nullable|integer|exists:semesters,id',
-    //         'session_id' => 'nullable|integer|exists:school_sessions,id',
-    //     ]);
-    
-    //     // Fetch the attempt with necessary relationships
-    //     $attempt = StudentQuizAttempt::findOrFail($request->attempt_id);
-        
-    //     // Fetch the quiz and its questions efficiently
-    //     $quiz = $attempt->quiz()->with([
-    //         'questions' => function ($query) {
-    //             $query->select('id', 'quiz_id', 'type', 'correct_answer', 'max_mark');
-    //         },
-    //         'questions.options' => function ($query) {
-    //             $query->select('id', 'question_id', 'is_correct');
-    //         }
-    //     ])->first();
-    
-    //     if (!$quiz) {
-    //         return response()->json(['message' => 'Quiz not found'], 404);
-    //     }
-    
-    //     // Ensure the authenticated user is the owner of the attempt
-    //     if ($attempt->student_id !== auth()->id()) {
-    //         return response()->json(['message' => 'Unauthorized submission'], 403);
-    //     }
-    
-    //     $score = 0;
-    
-    //     // Fetch all student answers in bulk to avoid repeated queries
-    //     $studentAnswers = $attempt->answers()->pluck('option_id', 'question_id');
-    
-    //     foreach ($quiz->questions as $question) {
-    //         $studentAnswer = $studentAnswers[$question->id] ?? null;
-    
-    //         if ($studentAnswer) {
-    //             if ($question->type == 'single_choice' || $question->type == 'multiple_choice') {
-    //                 // Fetch correct options for this question
-    //                 $correctOptions = $question->options->where('is_correct', true)->pluck('id')->toArray();
-    
-    //                 // If it's multiple-choice, get all selected options
-    //                 $selectedOptions = is_array($studentAnswer) ? $studentAnswer : [$studentAnswer];
-    
-    //                 if ($question->type == 'multiple_choice') {
-    //                     $selectedOptions = $attempt->answers()
-    //                         ->where('question_id', $question->id)
-    //                         ->pluck('option_id')
-    //                         ->toArray();
-    //                 }
-    
-    //                 // Compare selected options with correct ones
-    //                 if ($selectedOptions == $correctOptions) {
-    //                     $score += 1;
-    //                 }
-    //             } elseif ($question->type == 'open_ended' && !empty($question->correct_answer)) {
-    //                 // Calculate similarity score for open-ended questions
-    //                 $studentText = strtolower(trim($studentAnswer));
-    //                 $correctText = strtolower(trim($question->correct_answer));
-    
-    //                 $levenshteinDistance = levenshtein($studentText, $correctText);
-    //                 $maxLength = max(strlen($studentText), strlen($correctText));
-    
-    //                 $similarityPercentage = ($maxLength > 0) ? (1 - ($levenshteinDistance / $maxLength)) * 100 : 0;
-    
-    //                 if ($similarityPercentage < 90) {
-    //                     $synonymMatch = $this->checkSynonyms($studentText, $correctText);
-    //                     if ($synonymMatch) {
-    //                         $similarityPercentage += 15;
-    //                     }
-    //                 }
-    
-    //                 // Assign marks based on similarity threshold
-    //                 if ($similarityPercentage >= 90) {
-    //                     $score += $question->max_mark;
-    //                 } elseif ($similarityPercentage >= 70) {
-    //                     $score += $question->max_mark * 0.75;
-    //                 } elseif ($similarityPercentage >= 50) {
-    //                     $score += $question->max_mark * 0.5;
-    //                 } elseif ($similarityPercentage >= 25) {
-    //                     $score += $question->max_mark * 0.25;
-    //                 }elseif ($similarityPercentage >= 10) {
-    //                     $score += $question->max_mark * 0.1;
-    //                 }
-    //             }
-    //         }
-    //     }
-    
-    //     // Update the attempt with the computed score and additional fields
-    //     $attempt->update([
-    //         'score' => $score,
-    //         'class_id' => $request->class_id ?? $attempt->class_id,
-    //         'section_id' => $request->section_id ?? $attempt->section_id,
-    //         'semester_id' => $request->semester_id ?? $attempt->semester_id,
-    //         'session_id' => $request->session_id ?? $attempt->session_id,
-    //     ]);
-    
-    //     return response()->json([
-    //         'message' => 'Quiz submitted successfully',
-    //         'score' => $score,
-    //         'questions' => $quiz->questions
-    //     ]);
-    // }
     
     /**
      * Check if two sentences have synonymous words.
@@ -491,78 +358,76 @@ class StudentQuizController extends Controller
     public function quizResults($attempt_id)
     {
         $attempt = StudentQuizAttempt::with(['quiz.questions.options', 'answers.option'])->find($attempt_id);
-    
+       
         if (!$attempt) {
             return redirect()->route('home')->with('error', 'Quiz attempt not found.');
         }
-    
+
         $totalMarks = 0;
         $earnedMarks = 0;
         $correctAnswers = 0;
-    
+
         $questionsWithAnswers = [];
-    
-        $studentAnswer = $attempt->answers->where('question_id', $attempt->quiz->questions[0]->id)->first();
-      
+
         foreach ($attempt->quiz->questions as $question) {
-            $studentAnswer = $attempt->answers->where('question_id', $question->id)->first();
-           
+            $studentAnswers = $attempt->answers->where('question_id', $question->id);
+        
             $studentResponseText = null;
             $correctResponseText = null;
             $isCorrect = false;
             $awardedMark = 0;
-
-            if ($question->type === 'single_choice' || $question->type === 'multiple_choice') {
-                $correctOption = $question->options->where('is_correct', true)->first();
-    
-                if ($studentAnswer && $studentAnswer->option_id) {
-                    $studentResponseText = $studentAnswer->answer_text;
-                }
-    
-                if ($correctOption) {
-                    $correctResponseText = $correctOption->option_text;
-                }
-    
-                if ($studentAnswer && $correctOption && $studentAnswer->option_id == $correctOption->id) {
+        
+            if ($question->type === 'multiple_choice') {
+                $correctOptions = $question->options->where('is_correct', true)->pluck('id')->toArray();
+                $studentSelectedOptions = $studentAnswers->pluck('option_id')->toArray();
+        
+                // Get text of student-selected options
+                $selectedTexts = $question->options->whereIn('id', $studentSelectedOptions)->pluck('option_text')->toArray();
+                $studentResponseText = !empty($selectedTexts) ? implode(', ', $selectedTexts) : 'No Answer';
+        
+                // Get correct option texts
+                $correctResponseText = $question->options->where('is_correct', true)->pluck('option_text')->join(', ') ?? 'N/A';
+        
+                if (count(array_diff($studentSelectedOptions, $correctOptions)) === 0 &&
+                    count(array_diff($correctOptions, $studentSelectedOptions)) === 0) {
                     $correctAnswers++;
                     $earnedMarks += 1;
                     $isCorrect = true;
                 }
-    
+        
                 $totalMarks += 1;
-            } elseif ($question->type === 'open_ended' && $studentAnswer) {
-                $maxMark = $question->max_mark ?? 1; 
-                $awardedMark = $studentAnswer->marks_awarded ?? 0;
-            
+            } elseif ($question->type === 'single_choice') {
+                $answer = $studentAnswers->first();
+        
+                $studentResponseText = $answer && $answer->option ? $answer->option->option_text : 'No Answer';
+                $correctResponseText = $question->options->where('is_correct', true)->pluck('option_text')->join(', ') ?? 'N/A';
+        
+                if ($answer && $answer->option_id && $question->options->where('is_correct', true)->pluck('id')->contains($answer->option_id)) {
+                    $correctAnswers++;
+                    $earnedMarks += 1;
+                    $isCorrect = true;
+                }
+        
+                $totalMarks += 1;
+            } elseif ($question->type === 'open_ended' && $studentAnswers->first()) {
+                $maxMark = $question->max_mark ?? 1;
+                $awardedMark = $studentAnswers->first()->marks_awarded ?? 0;
+        
                 $correctAnswer = strtolower(trim($question->correct_answer));
-                $studentResponse = strtolower(trim($studentAnswer->answer_text));
-    
-                $studentResponseText = $studentAnswer->answer_text;
+                $studentResponse = strtolower(trim($studentAnswers->first()->answer_text));
+        
+                $studentResponseText = $studentAnswers->first()->answer_text;
                 $correctResponseText = $question->correct_answer;
-    
-                // $similarity = levenshtein($correctAnswer, $studentResponse);
-                // $maxLen = max(strlen($correctAnswer), strlen($studentResponse));
-                // $matchPercentage = ($maxLen > 0) ? ((1 - ($similarity / $maxLen)) * 100) : 0;
-    
-                // if ($matchPercentage >= 80) {
-                //     $earnedMarks += $maxMark;
-                //     $correctAnswers++;
-                //     $isCorrect = true;
-                // } elseif ($matchPercentage >= 50) {
-                //     $earnedMarks += $maxMark / 2;
-                // }
-    
-                // $totalMarks += $maxMark;
-
-                $earnedMarks += $awardedMark; 
+        
+                $earnedMarks += $awardedMark;
                 if ($awardedMark >= $maxMark) {
                     $correctAnswers++;
                     $isCorrect = true;
                 }
-    
+        
                 $totalMarks += $maxMark;
             }
-    
+        
             $questionsWithAnswers[] = [
                 'question' => $question->question_text,
                 'questionType' => $question->type,
@@ -572,11 +437,11 @@ class StudentQuizController extends Controller
                 'awardedMark' => $awardedMark,
                 'maxMark' => $question->max_mark ?? 1,
             ];
-
         }
-    
+        
+
         $score = ($totalMarks > 0) ? round(($earnedMarks / $totalMarks) * 100, 2) : 0;
-    
+
         return view('quizzes.students.results', [
             'attempt' => $attempt,
             'score' => $score,

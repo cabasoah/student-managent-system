@@ -169,7 +169,29 @@
                                         </div>
                                     @endforeach
                                 </div>
-                            @elseif ($question->type === 'multiple_choice')
+                                @elseif ($question->type === 'multiple_choice')
+                                    <div class="mb-3">
+                                        @foreach($question->options as $option)
+                                            <div class="card mb-2 option-card">
+                                                <div class="card-body py-2">
+                                                    <div class="form-check">
+                                                        <input 
+                                                            class="form-check-input" 
+                                                            type="checkbox" 
+                                                            name="answers[{{ $question->id }}][]" 
+                                                            id="option-{{ $option->id }}" 
+                                                            value="{{ $option->id }}" 
+                                                            onchange="handleMultipleChoiceChange({{ $question->id }})">
+                                                        <label class="form-check-label w-100" for="option-{{ $option->id }}">
+                                                            {{ $option->option_text }}
+                                                        </label>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        @endforeach
+                                    </div>
+
+                            {{-- @elseif ($question->type === 'multiple_choice')
                                 <div class="mb-3">
                                     @foreach($question->options as $option)
                                         <div class="card mb-2 option-card">
@@ -189,7 +211,7 @@
                                             </div>
                                         </div>
                                     @endforeach
-                                </div>
+                                </div> --}}
                             @else
                                 <div class="mb-3">
                                     <textarea 
@@ -417,12 +439,15 @@
         const counterElement = document.getElementById('question-counter');
         counterElement.textContent = `Question ${currentQuestion + 1} of ${questions.length}`;
     }
+
+    //constant variables
+    const attemptId = document.getElementById('attempt_id').value;
+    const classId = document.getElementById('class_id').value;
+    const sectionId = document.getElementById('section_id').value;
+    const semesterId = document.getElementById('semester_id').value;
+    const sessionId = document.getElementById('session_id').value;
+
     function saveAnswer(questionId, optionId, answerValue) {
-        const attemptId = document.getElementById('attempt_id').value;
-        const classId = document.getElementById('class_id').value;
-        const sectionId = document.getElementById('section_id').value;
-        const semesterId = document.getElementById('semester_id').value;
-        const sessionId = document.getElementById('session_id').value;
         
         fetch('/student-quizzes/save-answer', {
             method: 'POST',
@@ -451,6 +476,39 @@
         })
         .catch(err => console.error('Error saving answer:', err));
     }
+
+    function handleMultipleChoiceChange(questionId) {
+        const checkedBoxes = document.querySelectorAll(
+            `input[name="answers[${questionId}][]"]:checked`
+        );
+
+        const optionIds = Array.from(checkedBoxes).map(box => box.value);
+
+        fetch('/student-quizzes/save-answer', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+            },
+            body: JSON.stringify({
+                attempt_id: attemptId, // define this globally in your Blade layout or JS
+                question_id: questionId,
+                option_ids: optionIds,
+                class_id: classId,     // optional if you're passing
+                section_id: sectionId,
+                semester_id: semesterId,
+                session_id: sessionId,
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            console.log('Saved:', data);
+        })
+        .catch(error => {
+            console.error('Save failed:', error);
+        });
+    }
+
 
     function submitQuiz() {
         localStorage.removeItem("remainingTime");

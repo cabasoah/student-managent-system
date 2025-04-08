@@ -190,6 +190,8 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/admin/quiz/{quizId}/export', function ($quizId) {
         return Excel::download(new StudentResultsExport($quizId), 'students_results.xlsx');
     })->name('admin.quiz.results.export');
+    Route::delete('/quiz/{quiz}/reset-all', [QuizController::class, 'resetAllAttempts'])->name('quiz.resetAll');
+
 
     // Quizes - Student
     Route::prefix('student-quizzes')->group(function () {

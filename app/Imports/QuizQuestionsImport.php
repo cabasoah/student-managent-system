@@ -32,13 +32,26 @@ class QuizQuestionsImport implements ToCollection
                 'max_mark' => $row[3],
             ]);
 
-            if (in_array($row[1], ['single_choice', 'multiple_choice'])) {
+            if ($row[1] === 'single_choice') {
                 for ($i = 4; $i <= 7; $i++) {
                     if (!empty($row[$i])) {
                         Option::create([
                             'question_id' => $question->id,
                             'option_text' => $row[$i],
-                            'is_correct' => ($i == 2), // Assume first option is correct
+                            'is_correct' => ($row[$i] == $row[2]), // Set is_correct based on correct_answer
+                        ]);
+                    }
+                }
+            }elseif ($row[1] === 'multiple_choice') {
+                $correctAnswers = array_map('strtolower', array_map('trim', explode(',', $row[2])));
+            
+                for ($i = 4; $i <= 7; $i++) {
+                    if (!empty($row[$i])) {
+                        $optionText = trim($row[$i]);
+                        Option::create([
+                            'question_id' => $question->id,
+                            'option_text' => $optionText,
+                            'is_correct' => in_array(strtolower($optionText), $correctAnswers),
                         ]);
                     }
                 }

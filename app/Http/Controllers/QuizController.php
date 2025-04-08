@@ -78,5 +78,18 @@ class QuizController extends Controller
         return view('quizzes.results', compact('quiz', 'studentResults'));
     }
 
+    public function resetAllAttempts($quiz_id)
+    {
+        $attempts = StudentQuizAttempt::where('quiz_id', $quiz_id)->get();
+
+        foreach ($attempts as $attempt) {
+            // Delete related student answers
+            $attempt->answers()->delete(); // assuming hasMany relation
+            $attempt->delete();
+        }
+
+        return back()->with('success', 'All quiz attempts for this quiz have been reset.');
+    }
+
     
 }

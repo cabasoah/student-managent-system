@@ -46,10 +46,10 @@ class SyllabusRepository {
 
     public function getByCourse($course_id) {
         $syllabi = Syllabus::where('course_id', $course_id)->get();
-
-        if ($syllabi->isEmpty()) {
-            throw new ModelNotFoundException('No syllabus found for this course.');
-        }
+        // dd($syllabi);
+        // if ($syllabi->isEmpty()) {
+        //     throw new ModelNotFoundException('No syllabus found for this course.');
+        // }
 
         return $syllabi;
     }

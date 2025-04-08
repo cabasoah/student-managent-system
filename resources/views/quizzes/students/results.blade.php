@@ -105,6 +105,95 @@
                                     @php
                                         $isCorrect = isset($item['isCorrect']) ? $item['isCorrect'] : null;
                                         $borderClass = $isCorrect === false ? 'border-danger border-opacity-25' : 
+                                                    ($isCorrect === true ? 'border-success border-opacity-25' : '');
+                                    @endphp
+                                    
+                                    <div class="accordion-item mb-3 {{ $borderClass }}">
+                                        <h2 class="accordion-header" id="heading{{ $index }}">
+                                            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapse{{ $index }}" aria-expanded="false" aria-controls="collapse{{ $index }}">
+                                                <div class="d-flex justify-content-between align-items-center w-100 pe-3">
+                                                    <div>
+                                                        <span class="text-muted me-2">Q{{ $index + 1 }}:</span>
+                                                        {{ $item['question'] }}
+                                                    </div>
+                                                    <div class="ms-auto">
+                                                        @if($isCorrect === true)
+                                                            <i class="bi bi-check-circle-fill text-success"></i>
+                                                        @elseif($isCorrect === false)
+                                                            <i class="bi bi-x-circle-fill text-danger"></i>
+                                                        @elseif($item['questionType'] === 'open_ended')
+                                                            <span class="badge bg-primary bg-opacity-10 text-primary">
+                                                                {{ $item['awardedMark'] }}/{{ $item['maxMark'] }}
+                                                            </span>
+                                                        @endif
+                                                    </div>
+                                                </div>
+                                            </button>
+                                        </h2>
+                                        <div id="collapse{{ $index }}" class="accordion-collapse collapse" aria-labelledby="heading{{ $index }}" data-bs-parent="#questionAccordion">
+                                            <div class="accordion-body">
+                                                <div class="mb-3">
+                                                    <p class="text-muted small mb-1">Your Answer:</p>
+                                                    <p class="{{ $isCorrect === false ? 'text-danger' : '' }}">
+                                                        @if($item['questionType'] === 'multiple_choice')
+                                                            <!-- Loop through selected options for multiple_choice -->
+                                                            @foreach(explode(',', $item['studentAnswer']) as $answer)
+                                                                <span class="badge bg-secondary">{{ $answer }}</span>
+                                                            @endforeach
+                                                        @else
+                                                            {{ $item['studentAnswer'] }}
+                                                        @endif
+                                                        @if(in_array($item['questionType'], ['single_choice', 'multiple_choice']) && !$isCorrect)
+                                                            <span class="text-danger ms-2">(Incorrect)</span>
+                                                        @endif
+                                                    </p>
+                                                </div>
+
+                                                <div class="mb-3">
+                                                    <p class="text-muted small mb-1">Correct Answer:</p>
+                                                    <p class="text-success">
+                                                        @if($item['questionType'] === 'multiple_choice')
+                                                            <!-- Loop through correct options for multiple_choice -->
+                                                            @foreach(explode(',', $item['correctAnswer']) as $correctOption)
+                                                                <span class="badge bg-success">{{ $correctOption }}</span>
+                                                            @endforeach
+                                                        @else
+                                                            {{ $item['correctAnswer'] }}
+                                                        @endif
+                                                    </p>
+                                                </div>
+
+                                                @if($item['questionType'] === 'open_ended')
+                                                    <div>
+                                                        <p class="text-muted small mb-1">Marks Awarded:</p>
+                                                        <div class="d-flex align-items-center gap-3">
+                                                            <div class="progress" style="height: 8px; width: 150px;">
+                                                                <div class="progress-bar" role="progressbar" 
+                                                                    style="width: {{ ($item['awardedMark'] / $item['maxMark']) * 100 }}%;" 
+                                                                    aria-valuenow="{{ $item['awardedMark'] }}" 
+                                                                    aria-valuemin="0" 
+                                                                    aria-valuemax="{{ $item['maxMark'] }}">
+                                                                </div>
+                                                            </div>
+                                                            <span class="small fw-medium">
+                                                                {{ $item['awardedMark'] }} / {{ $item['maxMark'] }}
+                                                            </span>
+                                                        </div>
+                                                    </div>
+                                                @endif
+                                            </div>
+                                        </div>
+                                    </div>
+                                @endforeach
+                            </div>
+
+                            <!-- Question Review -->
+                            {{-- <h3 class="mb-4">Question Review</h3>
+                            <div class="accordion" id="questionAccordion">
+                                @foreach ($questionsWithAnswers as $index => $item)
+                                    @php
+                                        $isCorrect = isset($item['isCorrect']) ? $item['isCorrect'] : null;
+                                        $borderClass = $isCorrect === false ? 'border-danger border-opacity-25' : 
                                                       ($isCorrect === true ? 'border-success border-opacity-25' : '');
                                     @endphp
                                     
@@ -169,7 +258,7 @@
                                         </div>
                                     </div>
                                 @endforeach
-                            </div>
+                            </div> --}}
                         </div>
                         
                         <div class="card-footer bg-white text-center py-4">
