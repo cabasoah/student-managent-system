@@ -18,7 +18,7 @@
 
     <!-- Scripts -->
     <script src="{{ asset('js/bootstrap.bundle.min.js') }}"></script>
-    <!-- <script src="{{ asset('js/app.js') }}" defer></script> -->
+
 
     <!-- Fonts -->
     <link rel="dns-prefetch" href="//fonts.gstatic.com">
@@ -163,6 +163,8 @@
     <div id="watermark">
         {{-- <p>{{ config('app.name', 'CugManagementSystem') }}</p> --}}
     </div>
+    
+<script src="{{ mix('/js/app.js') }}"></script>
 
  <!-- Preloader Script -->
  <script>
@@ -175,5 +177,6 @@
         }, 300);
     });
 </script>
+@stack('scripts')
 </body>
 </html>

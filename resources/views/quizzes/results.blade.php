@@ -26,23 +26,27 @@
                             <table class="table">
                                 <thead>
                                     <tr>
+                                        <th scope="col"> Number </th>
                                         <th scope="col">Student Name</th>
-                                        <th scope="col">Score</th>
-                                        <th scope="col">Attempted On</th>
+                                        <th scope="col">Total Marks</th>
+                                        <th scope="col">Grade</th>
+                                        <th scope="col">Points</th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     @forelse ($studentResults as $result)
                                         <tr>
-                                            <td>{{ $result->student_name }}</td>
-                                            <td>{{ $result->score }}</td>
-                                            <td>{{ $result->created_at }}</td>
+                                            <td>{{ $loop->iteration }}</td>
+                                            <td>{{ $result['student_name'] ?? 'N/A' }}</td>
+                                            <td>{{ $result['score'] ?? 'N/A' }}</td>
+                                            <td>{{ getGradeOne($result['score']) }}</td>
+                                            <td>{{ getGPA($result['score']) }}</td>
                                         </tr>
                                     @empty
                                         <tr>
-                                            <td colspan="3" class="text-center">No students have attempted this quiz yet.</td>
+                                            <td colspan="5" class="text-center">No students have attempted this quiz yet.</td>
                                         </tr>
-                                    @endforelse
+                                    @endforelse                                
                                 </tbody>
                             </table>
                         </div>

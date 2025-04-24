@@ -61,41 +61,43 @@
                                     </thead>
                                     <tbody>
                                         @foreach ($studentList as $student)
-                                        <tr>
-                                            <th scope="row">{{$student->id_card_number}}</th>
-                                            <td>
-                                                @if (isset($student->student->photo))
-                                                    <img src="{{asset('/storage'.$student->student->photo)}}" class="rounded" alt="Profile picture" height="30" width="30">
-                                                @else
-                                                    <i class="bi bi-person-square"></i>
-                                                @endif
-                                            </td>
-                                            <td>{{$student->student->first_name}}</td>
-                                            <td>{{$student->student->last_name}}</td>
-                                            <td>{{$student->student->email}}</td>
-                                            <td>{{$student->student->phone}}</td>
-                                            <td>
-                                                <div class="btn-group" role="group">
-                                                    <a href="{{route('student.attendance.show', ['id' => $student->student->id])}}" role="button" class="btn btn-sm btn-outline-primary"><i class="bi bi-eye"></i> Attendance</a>
-                                                    <a href="{{url('students/view/profile/'.$student->student->id)}}" role="button" class="btn btn-sm btn-outline-primary"><i class="bi bi-eye"></i> Profile</a>
-                                                    <a href="{{ route('admin.student.quizzes.index', ['id' => $student->student->id]) }}" class="btn btn-sm btn-outline-primary">
-                                                        <i class="bi bi-journal-text"></i> Quizzes
-                                                    </a>
-                                                    @can('edit users')
-                                                    <a href="{{route('student.edit.show', ['id' => $student->student->id])}}" role="button" class="btn btn-sm btn-outline-primary"><i class="bi bi-pen"></i> Edit</a>
-                                    
-                                                    <form action="{{ route('students.destroy', $student->student->id) }}" method="POST" class="d-inline">
-                                                        @csrf
-                                                        @method('DELETE')
-                                                        <button type="submit" class="btn btn-sm btn-outline-danger" onclick="return confirm('Are you sure you want to delete this student?');">
-                                                            <i class="bi bi-trash"></i> Delete
-                                                        </button>
-                                                    </form>
-                                                    @endcan
-                                                    {{-- <button type="button" class="btn btn-sm btn-primary"><i class="bi bi-trash2"></i> Delete</button> --}}
-                                                </div>
-                                            </td>
-                                        </tr>
+                                        @if($student->student != null)    
+                                            <tr>
+                                                <th scope="row">{{$student->id_card_number}}</th>
+                                                <td>
+                                                    @if (isset($student->student->photo))
+                                                        <img src="{{asset('/storage'.$student->student->photo)}}" class="rounded" alt="Profile picture" height="30" width="30">
+                                                    @else
+                                                        <i class="bi bi-person-square"></i>
+                                                    @endif
+                                                </td>
+                                                <td>{{$student->student->first_name }}</td>
+                                                <td>{{$student->student->last_name}}</td>
+                                                <td>{{$student->student->email}}</td>
+                                                <td>{{$student->student->phone}}</td>
+                                                <td>
+                                                    <div class="btn-group" role="group">
+                                                        <a href="{{route('student.attendance.show', ['id' => $student->student->id])}}" role="button" class="btn btn-sm btn-outline-primary"><i class="bi bi-eye"></i> Attendance</a>
+                                                        <a href="{{url('students/view/profile/'.$student->student->id)}}" role="button" class="btn btn-sm btn-outline-primary"><i class="bi bi-eye"></i> Profile</a>
+                                                        <a href="{{ route('admin.student.quizzes.index', ['id' => $student->student->id]) }}" class="btn btn-sm btn-outline-primary">
+                                                            <i class="bi bi-journal-text"></i> Quizzes
+                                                        </a>
+                                                        @can('edit users')
+                                                        <a href="{{route('student.edit.show', ['id' => $student->student->id])}}" role="button" class="btn btn-sm btn-outline-primary"><i class="bi bi-pen"></i> Edit</a>
+                                        
+                                                        <form action="{{ route('students.destroy', $student->student->id) }}" method="POST" class="d-inline">
+                                                            @csrf
+                                                            @method('DELETE')
+                                                            <button type="submit" class="btn btn-sm btn-outline-danger" onclick="return confirm('Are you sure you want to delete this student?');">
+                                                                <i class="bi bi-trash"></i> Delete
+                                                            </button>
+                                                        </form>
+                                                        @endcan
+                                                        {{-- <button type="button" class="btn btn-sm btn-primary"><i class="bi bi-trash2"></i> Delete</button> --}}
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        @endif
                                         @endforeach
                                     </tbody>
                                 </table>

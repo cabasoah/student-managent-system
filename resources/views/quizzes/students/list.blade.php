@@ -29,7 +29,7 @@
                                     <th scope="col">Duration</th>
                                     <th scope="col">Earned Marks</th>
                                     <th scope="col">Total Marks</th>
-                                    <th scope="col">Grade</th>
+                                    {{-- <th scope="col">Grade</th> --}}
                                     <th scope="col">Actions</th>
                                 </tr>
                             </thead>
@@ -49,13 +49,13 @@
                                     <td>
                                         {{ $quiz->total_marks }}
                                     </td>
-                                    <td class="fw-bold">
+                                    {{-- <td class="fw-bold">
                                         @if (isset($attemptedQuizzes[$quiz->id]))
                                             {{ getGrade($attemptedQuizzes[$quiz->id]->score,$quiz->total_marks) }}
                                         @else
                                             <span class="text-muted">Not Attempted</span>
                                         @endif
-                                    </td>
+                                    </td> --}}
                                     <td>
                                         @if (!isset($attemptedQuizzes[$quiz->id]))
                                             <a href="{{ route('quiz.instructions', ['quiz_id' => $quiz->id]) }}" class="btn btn-sm btn-primary">

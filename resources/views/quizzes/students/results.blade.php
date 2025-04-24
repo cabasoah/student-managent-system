@@ -178,7 +178,24 @@
                                                             <span class="small fw-medium">
                                                                 {{ $item['awardedMark'] }} / {{ $item['maxMark'] }}
                                                             </span>
+                                                             <!-- Edit Marks Button -->
+                                                             @can('create exams')
+                                                                <button type="button" class="btn btn-sm btn-outline-primary" data-bs-toggle="collapse" data-bs-target="#editMarksForm{{$loop->index}}">
+                                                                    Edit Answer
+                                                                </button>
+                                                            @endcan
                                                         </div>
+                                                          <!-- Collapsible Edit Form -->
+                                                            @can('create exams')
+                                                                <div class="collapse mt-2" id="editMarksForm{{$loop->index}}">
+                                                                    <form action="{{ route('quiz.updateMarks') }}" method="POST" class="d-flex gap-2 align-items-center">
+                                                                        @csrf
+                                                                        <input type="hidden" name="answer_id" value="{{ $item['answer_id'] }}">
+                                                                        <input type="number" name="marks_awarded" class="form-control form-control-sm" value="{{ $item['awardedMark'] }}" step="0.01" max="{{ $item['maxMark'] }}" min="0" required>
+                                                                        <button type="submit" class="btn btn-sm btn-success">Save</button>
+                                                                    </form>
+                                                                </div>
+                                                            @endcan
                                                     </div>
                                                 @endif
                                             </div>

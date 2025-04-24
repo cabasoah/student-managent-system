@@ -63,6 +63,22 @@
                     <li class="nav-item">
                         <a class="nav-link {{ request()->routeIs('course.student.list.show')? 'active' : '' }}" href="{{route('course.student.list.show', ['student_id' => Auth::user()->id])}}"><i class="bi bi-journal-medical"></i> <span class="ms-1 d-inline d-sm-none d-md-none d-xl-inline">Courses</span></a>
                     </li>
+                    <li class="nav-item">
+                        @php
+                            if (session()->has('browse_session_id')){
+                                $class_info = \App\Models\Promotion::where('session_id', session('browse_session_id'))->where('student_id', Auth::user()->id)->first();
+                            } else {
+                                $latest_session = \App\Models\SchoolSession::latest()->first();
+                                if($latest_session) {
+                                    $class_info = \App\Models\Promotion::where('session_id', $latest_session->id)->where('student_id', Auth::user()->id)->first();
+                                } else {
+                                    $class_info = [];
+                                }
+                            }
+                        @endphp
+                        <a class="nav-link {{ request()->routeIs('chat.index')? 'active' : '' }}" href="{{route('chat.index',['class_id' => $class_info['class_id'], 'section_id' => $class_info['section_id']])}}"><i class="bi bi-chat-left-text"></i> <span class="ms-1 d-inline d-sm-none d-md-none d-xl-inline">Chat</span></a>
+                    </li>
+                    
                     {{-- <li class="nav-item">
                         <a class="nav-link" href="#"><i class="bi bi-file-post"></i> <span class="ms-1 d-inline d-sm-none d-md-none d-xl-inline">Assignments</span></a>
                     </li><li class="nav-item">

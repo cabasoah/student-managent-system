@@ -33,9 +33,11 @@ use App\Exports\QuizzesExport;
 use Maatwebsite\Excel\Facades\Excel;
 use App\Interfaces\SchoolSessionInterface;
 use App\Exports\StudentResultsExport;
+use App\Http\Controllers\ChatController;
 use App\Http\Controllers\InvitationController;
 use App\Http\Controllers\LecturerInviteController;
 use App\Http\Requests\TeacherStoreRequest;
+use Illuminate\Support\Facades\Broadcast;
 
 /*
 |--------------------------------------------------------------------------
@@ -47,6 +49,8 @@ use App\Http\Requests\TeacherStoreRequest;
 | contains the "web" middleware group. Now create something great!
 |
 */
+
+Broadcast::routes(['middleware' => ['auth']]);
 
 Route::get('/', function () {
     return view('welcome');
@@ -100,6 +104,7 @@ Route::middleware(['auth'])->group(function () {
         // Courses
         Route::post('course/create', [CourseController::class, 'store'])->name('course.create');
         Route::post('course/update', [CourseController::class, 'update'])->name('course.update');
+        // Route::delete('courses/{id}', [CourseController::class, 'destroy'])->name('courses.destroy');
 
         // Teacher
         Route::post('teacher/create', [UserController::class, 'storeTeacher'])->name('teacher.create');
@@ -134,7 +139,7 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/teachers/edit/{id}', [UserController::class, 'editTeacher'])->name('teacher.edit.show');
     Route::get('/teachers/view/list', [UserController::class, 'getTeacherList'])->name('teacher.list.show');
     Route::get('/teachers/view/profile/{id}', [UserController::class, 'showTeacherProfile'])->name('teacher.profile.show');
-    Route::post('teachers/delete/{id}', [UserController::class, 'deleteTecher'])->name('teachers.destroy');
+    Route::delete('teachers/delete/{id}', [UserController::class, 'deleteTeacher'])->name('teachers.destroy');
 
     //Students
     Route::get('/students/add', [UserController::class, 'createStudent'])->name('student.create.show');
@@ -142,12 +147,14 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/students/view/list', [UserController::class, 'getStudentList'])->name('student.list.show');
     Route::get('/students/view/profile/{id}', [UserController::class, 'showStudentProfile'])->name('student.profile.show');
     Route::get('/students/view/attendance/{id}', [AttendanceController::class, 'showStudentAttendance'])->name('student.attendance.show');
-    Route::post('/students/delete/{id}', [UserController::class, 'deleteStudent'])->name('students.destroy');
+    Route::delete('/students/delete/{id}', [UserController::class, 'deleteStudent'])->name('students.destroy');
 
     // Marks
     Route::get('/marks/create', [MarkController::class, 'create'])->name('course.mark.create');
     Route::post('/marks/store', [MarkController::class, 'store'])->name('course.mark.store');
     Route::get('/marks/results', [MarkController::class, 'index'])->name('course.mark.list.show');
+    Route::post('/quiz/update-marks', [QuizController::class, 'updateMarks'])->name('quiz.updateMarks');
+
     // Route::get('/marks/view', function () {
     //     return view('marks.view');
     // });
@@ -251,4 +258,9 @@ Route::middleware(['auth'])->group(function () {
     // Update password
     Route::get('password/edit', [UpdatePasswordController::class, 'edit'])->name('password.edit');
     Route::post('password/update', [UpdatePasswordController::class, 'update'])->name('password.custom.update');
+
 });
+
+ // Chat
+ Route::get('/chat', [ChatController::class, 'index'])->name('chat.index');
+ Route::post('/chat', [ChatController::class, 'store'])->name('chat.store');

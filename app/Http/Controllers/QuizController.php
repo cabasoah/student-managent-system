@@ -63,20 +63,66 @@ class QuizController extends Controller
 
     public function showResults($quizId)
     {
-        $quiz = Quiz::findOrFail($quizId);
-       
-        $studentResults = StudentQuizAttempt::where('quiz_id', $quizId)
-        ->join('users', 'student_quiz_attempts.student_id', '=', 'users.id')
-        ->select(
-            DB::raw("CONCAT(users.first_name, ' ', users.last_name) as student_name"),
-            'student_quiz_attempts.score',
-            'student_quiz_attempts.created_at'
-        )
-        ->orderBy('student_quiz_attempts.created_at', 'desc')
-        ->get();
-          
+        $quiz = Quiz::with(['questions.options'])->findOrFail($quizId);
+
+        // Get all attempts with answers and options
+        $studentAttempts = StudentQuizAttempt::with(['student', 'answers.option'])
+            ->where('quiz_id', $quizId)
+            ->get();
+
+        $studentResults = [];
+
+        foreach ($studentAttempts as $attempt) {
+            $totalMarks = 0;
+            $earnedMarks = 0;
+
+            foreach ($quiz->questions as $question) {
+                $studentAnswers = $attempt->answers->where('question_id', $question->id);
+
+                if ($question->type === 'multiple_choice') {
+                    $correctOptions = $question->options->where('is_correct', true)->pluck('id')->toArray();
+                    $studentSelectedOptions = $studentAnswers->pluck('option_id')->toArray();
+
+                    if (
+                        count(array_diff($studentSelectedOptions, $correctOptions)) === 0 &&
+                        count(array_diff($correctOptions, $studentSelectedOptions)) === 0
+                    ) {
+                        $earnedMarks += 1;
+                    }
+
+                    $totalMarks += 1;
+                } elseif ($question->type === 'single_choice') {
+                    $answer = $studentAnswers->first();
+                    $correctOptionIds = $question->options->where('is_correct', true)->pluck('id');
+
+                    if ($answer && $answer->option_id && $correctOptionIds->contains($answer->option_id)) {
+                        $earnedMarks += 1;
+                    }
+
+                    $totalMarks += 1;
+                } elseif ($question->type === 'open_ended') {
+                    $maxMark = $question->max_mark ?? 1;
+                    $awardedMark = $studentAnswers->first()->marks_awarded ?? 0;
+
+                    $earnedMarks += $awardedMark;
+                    $totalMarks += $maxMark;
+                }
+            }
+
+            $score = ($totalMarks > 0) ? round(($earnedMarks / $totalMarks) * 100, 2) : 0;
+
+            $studentResults[] = [
+                'student_name' => $attempt->student->first_name . ' ' . $attempt->student->last_name,
+                'score' => $score,
+                'earned_marks' => $earnedMarks,
+                'total_marks' => $totalMarks,
+                'attempted_at' => $attempt->created_at,
+            ];
+        }
+        // dd($studentResults[0]);
         return view('quizzes.results', compact('quiz', 'studentResults'));
     }
+
 
     public function resetAllAttempts($quiz_id)
     {
@@ -90,6 +136,29 @@ class QuizController extends Controller
 
         return back()->with('success', 'All quiz attempts for this quiz have been reset.');
     }
+
+    public function updateMarks(Request $request)
+    {
+        $request->validate([
+            'answer_id' => 'required|exists:student_answers,id',
+            'marks_awarded' => 'required|numeric|min:0',
+        ]);
+
+        $answer = StudentAnswer::findOrFail($request->answer_id);
+        
+        $question = $answer->question;
+        $maxMark = $question->max_mark ?? 1;
+
+        if ($request->marks_awarded > $maxMark) {
+            return back()->with('status', 'Awarded marks cannot exceed maximum marks.');
+        }
+
+        $answer->marks_awarded = $request->marks_awarded;
+        $answer->save();
+
+        return back()->with('status', 'Marks updated successfully.');
+    }
+
 
     
 }

@@ -382,6 +382,7 @@ class StudentQuizController extends Controller
             $correctResponseText = null;
             $isCorrect = false;
             $awardedMark = 0;
+            $studentAnswer = null;
         
             if ($question->type === 'multiple_choice') {
                 $correctOptions = $question->options->where('is_correct', true)->pluck('id')->toArray();
@@ -417,6 +418,7 @@ class StudentQuizController extends Controller
                 $totalMarks += 1;
             } elseif ($question->type === 'open_ended' && $studentAnswers->first()) {
                 $maxMark = $question->max_mark ?? 1;
+                $studentAnswer = $studentAnswers->first();
                 $awardedMark = $studentAnswers->first()->marks_awarded ?? 0;
         
                 $correctAnswer = strtolower(trim($question->correct_answer));
@@ -433,7 +435,7 @@ class StudentQuizController extends Controller
         
                 $totalMarks += $maxMark;
             }
-        
+            // dd($studentAnswers);
             $questionsWithAnswers[] = [
                 'question' => $question->question_text,
                 'questionType' => $question->type,
@@ -442,12 +444,13 @@ class StudentQuizController extends Controller
                 'isCorrect' => $isCorrect,
                 'awardedMark' => $awardedMark,
                 'maxMark' => $question->max_mark ?? 1,
+                'answer_id' => $studentAnswer->id ?? null,
             ];
         }
         
 
         $score = ($totalMarks > 0) ? round(($earnedMarks / $totalMarks) * 100, 2) : 0;
-
+    
         return view('quizzes.students.results', [
             'attempt' => $attempt,
             'score' => $score,
