@@ -199,40 +199,6 @@ npm run production
 
 Edit `.env` file with your configuration:
 
-```env
-# Application
-APP_NAME="Student Management System"
-APP_ENV=local
-APP_DEBUG=true
-APP_URL=http://localhost
-
-# Database
-DB_CONNECTION=mysql
-DB_HOST=127.0.0.1
-DB_PORT=3306
-DB_DATABASE=unifiedtransform
-DB_USERNAME=root
-DB_PASSWORD=secret
-
-# Broadcasting (Real-time)
-BROADCAST_DRIVER=pusher
-PUSHER_APP_ID=your_app_id
-PUSHER_APP_KEY=your_app_key
-PUSHER_APP_SECRET=your_app_secret
-PUSHER_APP_CLUSTER=mt1
-
-# Cache
-CACHE_DRIVER=file
-
-# Queue
-QUEUE_CONNECTION=sync
-
-# Mail (for notifications)
-MAIL_MAILER=smtp
-MAIL_HOST=mailhog
-MAIL_PORT=1025
-```
-
 ### Key Configuration Files
 - `config/app.php` - Application settings
 - `config/database.php` - Database connections
